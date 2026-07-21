@@ -1,0 +1,8 @@
+/node_modules
+/radiochron.exe
+/*.tgz
+.idea/
+.vscode/
+*.swp
+Thumbs.db
+Desktop.ini

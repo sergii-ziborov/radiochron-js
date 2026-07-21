@@ -1,0 +1,65 @@
+name: npm CI
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  mcp-binary:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Use the self-contained GNU toolchain
+        run: |
+          rustup toolchain install stable-x86_64-pc-windows-gnu
+          rustup default stable-x86_64-pc-windows-gnu
+      - name: Build the pinned MCP revision
+        shell: pwsh
+        run: |
+          $meta = Get-Content package.json | ConvertFrom-Json
+          $sha = $meta.radiochronMcp.gitSha
+          $source = Join-Path '${{ runner.temp }}' 'radiochron-mcp'
+          git clone $meta.radiochronMcp.repository $source
+          git -C $source checkout --detach $sha
+          $env:RADIOCHRON_GIT_SHA = $sha
+          cargo build --release --locked --manifest-path (Join-Path $source 'Cargo.toml')
+          $binary = Join-Path $source 'target/release/radiochron.exe'
+          $info = & $binary --build-info | ConvertFrom-Json
+          if ($info.git_sha -ne $sha) { throw 'MCP binary revision mismatch' }
+          Copy-Item $binary (Join-Path '${{ runner.temp }}' 'radiochron.exe')
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pinned-radiochron-mcp
+          path: ${{ runner.temp }}/radiochron.exe
+
+  package:
+    needs: mcp-binary
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        node: [18, 20, 22, 24]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: pinned-radiochron-mcp
+          path: ${{ runner.temp }}/radiochron-binary
+      - run: node --check bin.js
+      - run: node --check prepare.js
+      - run: npm.cmd test
+      - name: Verify package contents and launcher
+        shell: pwsh
+        env:
+          RADIOCHRON_MCP_BINARY: ${{ runner.temp }}/radiochron-binary/radiochron.exe
+        run: |
+          npm.cmd pack --dry-run
+          node bin.js --version
