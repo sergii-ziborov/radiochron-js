@@ -1,0 +1,238 @@
+use std::path::PathBuf;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, Mutex};
+use std::thread::JoinHandle;
+use std::time::Duration;
+
+use radiochron::chronicle::{
+    read_recent_jsonl, JsonlSink, Recorder, RecorderOptions, RotationPolicy,
+};
+use serde_json::{json, Value};
+
+pub struct ChronicleService {
+    control: Mutex<Option<Worker>>,
+    status: Arc<Mutex<Status>>,
+    path: PathBuf,
+}
+
+struct Worker {
+    stop: Arc<AtomicBool>,
+    handle: JoinHandle<()>,
+}
+
+#[derive(Default)]
+struct Status {
+    running: bool,
+    started_at_epoch_seconds: Option<i64>,
+    stopped_at_epoch_seconds: Option<i64>,
+    entries_written: usize,
+    last_error: Option<String>,
+}
+
+impl ChronicleService {
+    pub fn new() -> Self {
+        let path = std::env::var_os("RADIOCHRON_CHRONICLE_PATH")
+            .map(PathBuf::from)
+            .unwrap_or_else(default_chronicle_path);
+        Self::with_path(path)
+    }
+
+    fn with_path(path: PathBuf) -> Self {
+        Self {
+            control: Mutex::new(None),
+            status: Arc::new(Mutex::new(Status::default())),
+            path,
+        }
+    }
+
+    pub fn start(&self, interval: Duration, threshold_db: i32) -> anyhow::Result<Value> {
+        let mut control = self
+            .control
+            .lock()
+            .unwrap_or_else(|error| error.into_inner());
+        if control.is_some() {
+            return Ok(self.status());
+        }
+
+        let sink = JsonlSink::open(&self.path, RotationPolicy::default())?;
+        let stop = Arc::new(AtomicBool::new(false));
+        let worker_stop = stop.clone();
+        let worker_status = self.status.clone();
+        let options = RecorderOptions {
+            interval,
+            signal_threshold_db: threshold_db,
+            ..RecorderOptions::default()
+        };
+
+        {
+            let mut current = self
+                .status
+                .lock()
+                .unwrap_or_else(|error| error.into_inner());
+            current.running = true;
+            current.started_at_epoch_seconds = Some(radiochron::time::now_epoch_seconds());
+            current.stopped_at_epoch_seconds = None;
+            current.entries_written = 0;
+            current.last_error = None;
+        }
+
+        let handle = std::thread::Builder::new()
+            .name("radiochron-node-recorder".to_string())
+            .spawn(move || {
+                let mut recorder = Recorder::new(sink, options);
+                while !worker_stop.load(Ordering::Acquire) {
+                    match recorder.step() {
+                        Ok(written) => {
+                            let mut current = worker_status
+                                .lock()
+                                .unwrap_or_else(|error| error.into_inner());
+                            current.entries_written =
+                                current.entries_written.saturating_add(written);
+                            current.last_error = None;
+                        }
+                        Err(error) => {
+                            worker_status
+                                .lock()
+                                .unwrap_or_else(|poisoned| poisoned.into_inner())
+                                .last_error = Some(error.to_string());
+                        }
+                    }
+                    std::thread::park_timeout(interval);
+                }
+
+                let mut current = worker_status
+                    .lock()
+                    .unwrap_or_else(|error| error.into_inner());
+                current.running = false;
+                current.stopped_at_epoch_seconds = Some(radiochron::time::now_epoch_seconds());
+            });
+
+        let handle = match handle {
+            Ok(handle) => handle,
+            Err(error) => {
+                let mut current = self
+                    .status
+                    .lock()
+                    .unwrap_or_else(|poisoned| poisoned.into_inner());
+                current.running = false;
+                current.stopped_at_epoch_seconds = Some(radiochron::time::now_epoch_seconds());
+                current.last_error = Some(error.to_string());
+                return Err(error.into());
+            }
+        };
+
+        *control = Some(Worker { stop, handle });
+        drop(control);
+        Ok(self.status())
+    }
+
+    pub fn stop(&self) -> anyhow::Result<Value> {
+        let worker = self
+            .control
+            .lock()
+            .unwrap_or_else(|error| error.into_inner())
+            .take();
+        if let Some(worker) = worker {
+            worker.stop.store(true, Ordering::Release);
+            worker.handle.thread().unpark();
+            if worker.handle.join().is_err() {
+                let mut current = self
+                    .status
+                    .lock()
+                    .unwrap_or_else(|error| error.into_inner());
+                current.running = false;
+                current.stopped_at_epoch_seconds = Some(radiochron::time::now_epoch_seconds());
+                current.last_error = Some("chronicle worker panicked".to_string());
+                anyhow::bail!("chronicle worker panicked");
+            }
+        }
+        Ok(self.status())
+    }
+
+    pub fn status(&self) -> Value {
+        let current = self
+            .status
+            .lock()
+            .unwrap_or_else(|error| error.into_inner());
+        json!({
+            "running": current.running,
+            "path": self.path.to_string_lossy(),
+            "started_at_epoch_seconds": current.started_at_epoch_seconds,
+            "stopped_at_epoch_seconds": current.stopped_at_epoch_seconds,
+            "entries_written_this_run": current.entries_written,
+            "last_error": current.last_error,
+        })
+    }
+
+    pub fn recent(&self, max: usize) -> anyhow::Result<Value> {
+        let read = read_recent_jsonl(
+            &self.path,
+            RotationPolicy::default().max_files,
+            max.clamp(1, 1000),
+        )?;
+        Ok(json!({
+            "path": self.path.to_string_lossy(),
+            "count": read.entries.len(),
+            "invalid_lines": read.invalid_lines,
+            "entries": read.entries,
+        }))
+    }
+}
+
+fn default_chronicle_path() -> PathBuf {
+    #[cfg(windows)]
+    {
+        return std::env::var_os("LOCALAPPDATA")
+            .map(PathBuf::from)
+            .unwrap_or_else(std::env::temp_dir)
+            .join("RadioChron")
+            .join("chronicle.jsonl");
+    }
+    #[cfg(target_os = "macos")]
+    {
+        return std::env::var_os("HOME")
+            .map(PathBuf::from)
+            .unwrap_or_else(std::env::temp_dir)
+            .join("Library")
+            .join("Application Support")
+            .join("RadioChron")
+            .join("chronicle.jsonl");
+    }
+    #[cfg(all(unix, not(target_os = "macos")))]
+    {
+        let base = std::env::var_os("XDG_STATE_HOME")
+            .map(PathBuf::from)
+            .or_else(|| {
+                std::env::var_os("HOME")
+                    .map(PathBuf::from)
+                    .map(|home| home.join(".local").join("state"))
+            })
+            .unwrap_or_else(std::env::temp_dir);
+        return base.join("radiochron").join("chronicle.jsonl");
+    }
+    #[allow(unreachable_code)]
+    std::env::temp_dir()
+        .join("radiochron")
+        .join("chronicle.jsonl")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn recent_reads_jsonl_without_starting_the_worker() {
+        let directory =
+            std::env::temp_dir().join(format!("radiochron-node-chronicle-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&directory);
+        std::fs::create_dir_all(&directory).unwrap();
+        let path = directory.join("chronicle.jsonl");
+        std::fs::write(&path, "{\"sequence\":1}\n{\"sequence\":2}\n").unwrap();
+
+        let result = ChronicleService::with_path(path).recent(1).unwrap();
+        assert_eq!(result["count"], 1);
+        assert_eq!(result["entries"][0]["sequence"], 2);
+
+        let _ = std::fs::remove_dir_all(&directory);
+    }
+}

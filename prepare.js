@@ -12,6 +12,7 @@ const expectedCore = packageJson.radiochronCore;
 const targets = [
   { key: 'win32-x64', env: 'RADIOCHRON_CORE_BINARY_WIN32_X64', file: 'radiochron-node-bridge.exe', platform: 'win32' },
   { key: 'linux-x64', env: 'RADIOCHRON_CORE_BINARY_LINUX_X64', file: 'radiochron-node-bridge', platform: 'linux' },
+  { key: 'linux-arm64', env: 'RADIOCHRON_CORE_BINARY_LINUX_ARM64', file: 'radiochron-node-bridge', platform: 'linux' },
   { key: 'darwin-x64', env: 'RADIOCHRON_CORE_BINARY_DARWIN_X64', file: 'radiochron-node-bridge', platform: 'darwin' },
   { key: 'darwin-arm64', env: 'RADIOCHRON_CORE_BINARY_DARWIN_ARM64', file: 'radiochron-node-bridge', platform: 'darwin' },
 ];

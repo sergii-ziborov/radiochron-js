@@ -7,7 +7,7 @@ const { join, resolve } = require('node:path');
 const DEFAULT_TIMEOUT_MS = 20_000;
 
 function targetFor(platform = process.platform, arch = process.arch) {
-  const supported = new Set(['win32-x64', 'linux-x64', 'darwin-x64', 'darwin-arm64']);
+  const supported = new Set(['win32-x64', 'linux-x64', 'linux-arm64', 'darwin-x64', 'darwin-arm64']);
   const key = `${platform}-${arch}`;
   if (!supported.has(key)) {
     throw new Error(`radiochron core: unsupported platform ${key}; supported: ${[...supported].join(', ')}`);
@@ -43,6 +43,12 @@ class RadioChronCoreClient {
     this.pending = new Map();
     this.buffer = '';
     this.nextId = 1;
+    this.chronicle = Object.freeze({
+      start: (chronicleOptions = {}) => this.chronicleStart(chronicleOptions),
+      stop: () => this.chronicleStop(),
+      status: () => this.chronicleStatus(),
+      recent: (chronicleOptions = {}) => this.chronicleRecent(chronicleOptions)
+    });
   }
 
   call(method, params = {}, timeoutMs = DEFAULT_TIMEOUT_MS) {
@@ -56,6 +62,81 @@ class RadioChronCoreClient {
       this.pending.set(id, { resolve: resolvePromise, reject: rejectPromise, timer });
       this.child.stdin.write(`${JSON.stringify({ id, method, params })}\n`);
     });
+  }
+
+  ping() {
+    return this.call('ping');
+  }
+
+  status() {
+    return this.call('wifi_status');
+  }
+
+  wifiStatus() {
+    return this.status();
+  }
+
+  scan(timeoutMs = DEFAULT_TIMEOUT_MS) {
+    return this.call('wifi_scan', {}, timeoutMs);
+  }
+
+  wifiScan(timeoutMs = DEFAULT_TIMEOUT_MS) {
+    return this.scan(timeoutMs);
+  }
+
+  networks(options = {}) {
+    return this.call('wifi_networks', compact({ refresh_scan: options.refreshScan }), options.timeoutMs);
+  }
+
+  wifiNetworks(options = {}) {
+    return this.networks(options);
+  }
+
+  analyze(options = {}) {
+    return this.call('wifi_analyze', compact({ refresh_scan: options.refreshScan }), options.timeoutMs);
+  }
+
+  sample(options = {}) {
+    const durationSeconds = options.durationSeconds ?? 20;
+    const timeoutMs = options.timeoutMs ?? Math.max(DEFAULT_TIMEOUT_MS, durationSeconds * 1000 + 10_000);
+    return this.call('wifi_sample', compact({
+      interface_guid: options.interfaceGuid,
+      duration_seconds: options.durationSeconds,
+      interval_ms: options.intervalMs
+    }), timeoutMs);
+  }
+
+  diagnoseConnectivity(options = {}) {
+    return this.call('connectivity_diagnose', compact({
+      dns_name: options.dnsName,
+      tcp_target: options.tcpTarget,
+      internet_target: options.internetTarget,
+      captive_portal_url: options.captivePortalUrl,
+      captive_portal_expected_status: options.captivePortalExpectedStatus,
+      tls_target: options.tlsTarget,
+      quality_target: options.qualityTarget,
+      quality_attempts: options.qualityAttempts,
+      timeout_ms: options.probeTimeoutMs
+    }), options.timeoutMs);
+  }
+
+  chronicleStart(options = {}) {
+    return this.call('chronicle_start', compact({
+      interval_seconds: options.intervalSeconds,
+      signal_threshold_db: options.signalThresholdDb
+    }), options.timeoutMs);
+  }
+
+  chronicleStop() {
+    return this.call('chronicle_stop');
+  }
+
+  chronicleStatus() {
+    return this.call('chronicle_status');
+  }
+
+  chronicleRecent(options = {}) {
+    return this.call('chronicle_recent', compact({ max_entries: options.maxEntries }), options.timeoutMs);
   }
 
   dispose() {
@@ -112,6 +193,10 @@ class RadioChronCoreClient {
   }
 }
 
+function compact(value) {
+  return Object.fromEntries(Object.entries(value).filter(([, entry]) => entry !== undefined));
+}
+
 let shared = null;
 function getRadioChronCoreClient() {
   shared ||= new RadioChronCoreClient();
@@ -122,11 +207,26 @@ function disposeRadioChronCoreClient() {
   shared = null;
 }
 
+const chronicle = Object.freeze({
+  start: (options = {}) => getRadioChronCoreClient().chronicle.start(options),
+  stop: () => getRadioChronCoreClient().chronicle.stop(),
+  status: () => getRadioChronCoreClient().chronicle.status(),
+  recent: (options = {}) => getRadioChronCoreClient().chronicle.recent(options)
+});
+
 module.exports = {
   RadioChronCoreClient,
+  analyze: (options = {}) => getRadioChronCoreClient().analyze(options),
+  chronicle,
+  diagnoseConnectivity: (options = {}) => getRadioChronCoreClient().diagnoseConnectivity(options),
   disposeRadioChronCoreClient,
   getRadioChronCoreClient,
+  networks: (options = {}) => getRadioChronCoreClient().networks(options),
+  ping: () => getRadioChronCoreClient().ping(),
   radiochronCoreManifestPath,
   resolveRadioChronCoreBridgePath,
+  sample: (options = {}) => getRadioChronCoreClient().sample(options),
+  scan: (timeoutMs) => getRadioChronCoreClient().scan(timeoutMs),
+  status: () => getRadioChronCoreClient().status(),
   targetFor
 };

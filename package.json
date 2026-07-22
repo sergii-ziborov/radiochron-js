@@ -28,6 +28,6 @@
     "url": "git+https://github.com/sergii-ziborov/radiochron-js.git"
   },
   "bugs": { "url": "https://github.com/sergii-ziborov/radiochron-js/issues" },
-  "keywords": ["wifi", "wlan", "diagnostics", "network", "iot", "nodejs", "windows", "linux", "macos", "apple-silicon", "rust"],
+  "keywords": ["wifi", "wlan", "diagnostics", "network", "iot", "nodejs", "windows", "linux", "linux-arm64", "raspberry-pi", "macos", "apple-silicon", "rust"],
   "engines": { "node": ">=18" }
 }

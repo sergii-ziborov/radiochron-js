@@ -23,9 +23,17 @@ test('all source-side package files exist', () => {
   }
 });
 
-test('package metadata covers Intel and Apple Silicon Macs', () => {
+test('package metadata covers Intel and Apple Silicon Macs plus Linux ARM64', () => {
   assert.match(packageJson.description, /cross-platform/i);
   assert(packageJson.keywords.includes('apple-silicon'));
+  assert(packageJson.keywords.includes('linux-arm64'));
   assert(packageJson.files.includes('vendor-core'));
   assert.equal(packageJson.files.includes('vendor'), false);
+});
+
+test('public declarations expose analysis, connectivity and chronicle APIs', () => {
+  const declarations = require('node:fs').readFileSync(join(__dirname, '..', 'core.d.ts'), 'utf8');
+  for (const symbol of ['analyze(', 'sample(', 'diagnoseConnectivity(', 'RadioChronChronicleClient']) {
+    assert.match(declarations, new RegExp(symbol.replace('(', '\\(')));
+  }
 });
