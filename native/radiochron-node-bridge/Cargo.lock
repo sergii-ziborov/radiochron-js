@@ -49,7 +49,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "radiochron-desktop-bridge"
+name = "radiochron-node-bridge"
 version = "0.1.0"
 dependencies = [
  "anyhow",

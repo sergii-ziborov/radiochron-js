@@ -11,7 +11,7 @@ const {
 test('direct-core target selection covers Windows and both Mac architectures', () => {
   assert.deepEqual(targetFor('win32', 'x64'), {
     key: 'win32-x64',
-    executable: 'radiochron-desktop-bridge.exe'
+    executable: 'radiochron-node-bridge.exe'
   });
   assert.equal(targetFor('darwin', 'x64').key, 'darwin-x64');
   assert.equal(targetFor('darwin', 'arm64').key, 'darwin-arm64');
@@ -19,7 +19,7 @@ test('direct-core target selection covers Windows and both Mac architectures', (
 
 test('an explicit direct-core bridge path wins', () => {
   assert.equal(resolveRadioChronCoreBridgePath({ executablePath: '/synthetic/core-bridge' }), '/synthetic/core-bridge');
-  assert.match(radiochronCoreManifestPath(), /radiochron-desktop-bridge[\\/]Cargo\.toml$/);
+  assert.match(radiochronCoreManifestPath(), /radiochron-node-bridge[\\/]Cargo\.toml$/);
 });
 
 test('unsupported architectures fail closed', () => {

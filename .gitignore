@@ -1,8 +1,8 @@
 /node_modules
 /radiochron.exe
-/vendor/
 /vendor-core/
 /native/radiochron-desktop-bridge/target/
+/native/radiochron-node-bridge/target/
 /*.tgz
 .idea/
 .vscode/

@@ -23,14 +23,14 @@ struct Response {
 
 fn main() -> anyhow::Result<()> {
     if std::env::args().any(|argument| argument == "--version") {
-        println!("radiochron-desktop-bridge {}", env!("CARGO_PKG_VERSION"));
+        println!("radiochron-node-bridge {}", env!("CARGO_PKG_VERSION"));
         return Ok(());
     }
     let stdin = io::stdin();
     let stdout = io::stdout();
     let mut output = stdout.lock();
     for line in stdin.lock().lines() {
-        let line = line.context("could not read desktop bridge request")?;
+        let line = line.context("could not read Node adapter request")?;
         if line.trim().is_empty() {
             continue;
         }
@@ -70,7 +70,7 @@ fn handle(method: &str, _params: &Value) -> anyhow::Result<Value> {
         "ping" => Ok(json!({
             "engine": "radiochron",
             "core_version": "0.2.0",
-            "transport": "direct_core_bridge",
+            "transport": "node_adapter",
             "platform": std::env::consts::OS,
             "arch": std::env::consts::ARCH
         })),
@@ -84,7 +84,7 @@ fn handle(method: &str, _params: &Value) -> anyhow::Result<Value> {
                 "interface_errors": collection.interface_errors
             }))
         }
-        _ => anyhow::bail!("unsupported direct-core method: {method}"),
+        _ => anyhow::bail!("unsupported Node adapter method: {method}"),
     }
 }
 
@@ -93,14 +93,14 @@ mod tests {
     use super::*;
 
     #[test]
-    fn ping_identifies_direct_core_transport() {
+    fn ping_identifies_node_adapter_transport() {
         let result = handle("ping", &Value::Null).unwrap();
         assert_eq!(result["engine"], "radiochron");
-        assert_eq!(result["transport"], "direct_core_bridge");
+        assert_eq!(result["transport"], "node_adapter");
     }
 
     #[test]
-    fn mcp_methods_fail_closed() {
-        assert!(handle("tools/call", &Value::Null).is_err());
+    fn unknown_methods_fail_closed() {
+        assert!(handle("unknown", &Value::Null).is_err());
     }
 }

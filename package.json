@@ -1,8 +1,7 @@
 {
   "name": "radiochron",
   "version": "0.2.0",
-  "description": "Cross-platform RadioChron delivery package: MCP CLI plus a direct Rust-core API for desktop applications.",
-  "bin": { "radiochron": "bin.js" },
+  "description": "Cross-platform Node.js API for the RadioChron Rust Wi-Fi diagnostics core.",
   "main": "core.js",
   "types": "core.d.ts",
   "exports": {
@@ -10,16 +9,11 @@
     "./core": { "types": "./core.d.ts", "require": "./core.js", "default": "./core.js" },
     "./package.json": "./package.json"
   },
-  "files": ["bin.js", "core.js", "core.d.ts", "native", "vendor", "vendor-core", "README.md", "LICENSE-MIT", "LICENSE-APACHE"],
+  "files": ["core.js", "core.d.ts", "native", "vendor-core", "README.md", "LICENSE-MIT", "LICENSE-APACHE"],
   "scripts": {
     "test": "node --test",
     "build:core": "node scripts/build-core.js",
     "prepack": "node prepare.js"
-  },
-  "radiochronMcp": {
-    "version": "0.2.0",
-    "gitSha": "c2d6e9c18efbd9ec6bd225208ef9b5cab65bede4",
-    "repository": "https://github.com/sergii-ziborov/radiochron-mcp"
   },
   "radiochronCore": {
     "version": "0.2.0",
@@ -34,6 +28,6 @@
     "url": "git+https://github.com/sergii-ziborov/radiochron-js.git"
   },
   "bugs": { "url": "https://github.com/sergii-ziborov/radiochron-js/issues" },
-  "keywords": ["mcp", "model-context-protocol", "wifi", "wlan", "diagnostics", "network", "windows", "linux", "macos", "apple-silicon", "rust"],
+  "keywords": ["wifi", "wlan", "diagnostics", "network", "iot", "nodejs", "windows", "linux", "macos", "apple-silicon", "rust"],
   "engines": { "node": ">=18" }
 }

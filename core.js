@@ -14,12 +14,12 @@ function targetFor(platform = process.platform, arch = process.arch) {
   }
   return {
     key,
-    executable: platform === 'win32' ? 'radiochron-desktop-bridge.exe' : 'radiochron-desktop-bridge'
+    executable: platform === 'win32' ? 'radiochron-node-bridge.exe' : 'radiochron-node-bridge'
   };
 }
 
 function radiochronCoreManifestPath() {
-  return join(__dirname, 'native', 'radiochron-desktop-bridge', 'Cargo.toml');
+  return join(__dirname, 'native', 'radiochron-node-bridge', 'Cargo.toml');
 }
 
 function resolveRadioChronCoreBridgePath(options = {}) {
@@ -31,7 +31,7 @@ function resolveRadioChronCoreBridgePath(options = {}) {
     join(process.resourcesPath || '', 'native', target.executable),
     resolve(process.cwd(), 'native', 'bin', target.executable),
     join(__dirname, 'vendor-core', target.key, target.executable),
-    join(__dirname, 'native', 'radiochron-desktop-bridge', 'target', 'release', target.executable)
+    join(__dirname, 'native', 'radiochron-node-bridge', 'target', 'release', target.executable)
   ];
   return candidates.find((candidate) => candidate && existsSync(candidate)) || target.executable;
 }

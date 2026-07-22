@@ -1,71 +1,56 @@
-# radiochron
+# radiochron-js
 
-The JavaScript delivery package for [RadioChron](https://radiochron.com). It has
-two deliberately separate surfaces:
+The official Node.js/npm API for the
+[`radiochron`](https://github.com/sergii-ziborov/radiochron) Rust Wi-Fi
+diagnostics core for applications and services.
 
-- the `radiochron` command launches the portable
-  [`radiochron-mcp`](https://github.com/sergii-ziborov/radiochron-mcp) server;
-- `radiochron/core` is a programmatic Node API backed by a tiny native sidecar
-  that links the [`radiochron`](https://github.com/sergii-ziborov/radiochron)
-  Rust library directly. It does not start an MCP server or speak MCP/JSON-RPC.
+It supports Windows x64, Linux x64, Intel Mac, and Apple Silicon Mac. The npm
+archive carries a small native adapter linked directly to the pinned Rust core;
+JavaScript applications never need to parse platform commands themselves.
 
-Both surfaces cover Windows x64, Linux x64, Intel Mac and Apple Silicon Mac.
+> Publication is pending. Until the package is published, install it from this
+> repository or use a local checkout.
 
-> Publication is pending. Until the package is published, use the repository
-> source or build the corresponding Rust binary directly.
-
-## MCP command
-
-```sh
-claude mcp add radiochron -- npx -y radiochron
-```
-
-Or in any MCP client config:
-
-```json
-{ "mcpServers": { "radiochron": { "command": "npx", "args": ["-y", "radiochron"] } } }
-```
-
-The MCP launcher exposes ten portable typed tools plus Windows event history.
-`connectivity_diagnose` separates radio, authentication, DHCP/static IP,
-gateway, DNS, TCP, captive portal, packet quality and Internet reachability.
-
-## Direct Rust-core API
-
-Desktop applications should import the programmatic surface:
+## Node API
 
 ```js
-const { getRadioChronCoreClient } = require('radiochron/core');
+const { getRadioChronCoreClient } = require('radiochron');
 
-const core = getRadioChronCoreClient();
-const interfaces = await core.call('wifi_status');
-const nearby = await core.call('wifi_networks');
+const radiochron = getRadioChronCoreClient();
+const interfaces = await radiochron.call('wifi_status');
+const nearby = await radiochron.call('wifi_networks');
 ```
 
-The native bridge exposes only `ping`, `wifi_status`, `wifi_scan`, and
-`wifi_networks`. That narrow protocol keeps UI integration out of the MCP
-server while reusing the same Rust collectors and data model. The
-[RadioChron Desktop](https://github.com/sergii-ziborov/radiochron-electron)
-application consumes this API and embeds the platform bridge in its installer.
+`radiochron/core` remains an equivalent explicit export for applications that
+prefer it. The current native surface provides `ping`, `wifi_status`,
+`wifi_scan`, and `wifi_networks`.
 
-## Provenance
+The adapter uses a private newline-delimited request protocol between Node and
+the linked Rust process. The
+[`radiochron-electron`](https://github.com/sergii-ziborov/radiochron-electron)
+application imports this Node API and bundles its native adapter in installers.
 
-`package.json` pins one exact `radiochron-mcp` commit and one exact core commit.
-`prepack` verifies the identity and SHA-256 of every MCP and direct-core binary
-before it can enter the npm archive. CI builds all four platform/architecture
-variants and checks the JavaScript surface on Node 18, 20, 22, and 24.
+## Build and provenance
 
-## Repository family
+```sh
+npm test
+npm run build:core
+```
 
-- [`radiochron`](https://github.com/sergii-ziborov/radiochron) — IoT/core Rust library
-- [`radiochron-agent`](https://github.com/sergii-ziborov/radiochron-agent) — offline-first fleet daemon and exporters
-- [`radiochron-fleet`](https://github.com/sergii-ziborov/radiochron-fleet) — self-hosted fleet control plane
-- [`radiochron-mcp`](https://github.com/sergii-ziborov/radiochron-mcp) — MCP server
-- [`radiochron-electron`](https://github.com/sergii-ziborov/radiochron-electron) — Windows/macOS desktop UI
-- [`radiochron-site`](https://github.com/sergii-ziborov/radiochron-site) — website source
+`package.json` pins one exact `radiochron` core commit. `prepack` verifies the
+identity and SHA-256 of every native target before it can enter the npm archive.
+CI builds Windows x64, Linux x64, Intel Mac, and Apple Silicon variants and
+checks the JavaScript API on supported Node versions.
 
-Apple hosts use CoreWLAN; Linux uses nl80211; Windows uses the native WLAN API.
-WLAN AutoConfig history is Windows-only, while direct status/scans, portable
-MCP tools and the local chronicle are available across supported platforms.
+## Repository boundaries
+
+- [`radiochron`](https://github.com/sergii-ziborov/radiochron) — Rust IoT core.
+- [`radiochron-js`](https://github.com/sergii-ziborov/radiochron-js) — this
+  Node/npm library over the core.
+- [`radiochron-electron`](https://github.com/sergii-ziborov/radiochron-electron)
+  — a separate desktop application consuming `radiochron-js`.
+
+Apple hosts use CoreWLAN, Linux uses nl80211, and Windows uses the native WLAN
+API through the Rust core.
 
 Dual-licensed under [MIT](LICENSE-MIT) or [Apache-2.0](LICENSE-APACHE).

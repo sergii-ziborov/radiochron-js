@@ -11,44 +11,38 @@ permissions:
   contents: read
 
 jobs:
-  mcp-binaries:
+  native-adapters:
     strategy:
       fail-fast: false
       matrix:
         include:
           - os: windows-latest
             key: win32-x64
-            binary: radiochron.exe
+            binary: radiochron-node-bridge.exe
           - os: ubuntu-latest
             key: linux-x64
-            binary: radiochron
+            binary: radiochron-node-bridge
           - os: macos-15-intel
             key: darwin-x64
-            binary: radiochron
+            binary: radiochron-node-bridge
           - os: macos-15
             key: darwin-arm64
-            binary: radiochron
+            binary: radiochron-node-bridge
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@stable
-      - name: Build the pinned native MCP revision
+      - name: Build the pinned RadioChron Node adapter
         env:
-          RADIOCHRON_TARGET_KEY: ${{ matrix.key }}
-          RADIOCHRON_BINARY_NAME: ${{ matrix.binary }}
-          RADIOCHRON_OUTPUT_DIR: ${{ runner.temp }}/radiochron-binary
-        run: node scripts/build-pinned.js
-      - name: Build the direct Rust-core bridge
-        env:
-          RADIOCHRON_CORE_OUTPUT_DIR: ${{ runner.temp }}/radiochron-binary
+          RADIOCHRON_CORE_OUTPUT_DIR: ${{ runner.temp }}/radiochron-native
         run: node scripts/build-core.js
       - uses: actions/upload-artifact@v4
         with:
-          name: pinned-${{ matrix.key }}
-          path: ${{ runner.temp }}/radiochron-binary/*
+          name: native-${{ matrix.key }}
+          path: ${{ runner.temp }}/radiochron-native/*
 
   package:
-    needs: mcp-binaries
+    needs: native-adapters
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -60,24 +54,16 @@ jobs:
           node-version: ${{ matrix.node }}
       - uses: actions/download-artifact@v4
         with:
-          pattern: pinned-*
-          path: ${{ runner.temp }}/radiochron-binaries
-      - run: node --check bin.js
+          pattern: native-*
+          path: ${{ runner.temp }}/radiochron-native
       - run: node --check prepare.js
       - run: node --check core.js
-      - run: node --check scripts/build-pinned.js
       - run: node --check scripts/build-core.js
       - run: npm test
-      - name: Verify package contents and native launcher
+      - name: Verify npm package contents
         env:
-          RADIOCHRON_MCP_BINARY_WIN32_X64: ${{ runner.temp }}/radiochron-binaries/pinned-win32-x64/radiochron.exe
-          RADIOCHRON_MCP_BINARY_LINUX_X64: ${{ runner.temp }}/radiochron-binaries/pinned-linux-x64/radiochron
-          RADIOCHRON_MCP_BINARY_DARWIN_X64: ${{ runner.temp }}/radiochron-binaries/pinned-darwin-x64/radiochron
-          RADIOCHRON_MCP_BINARY_DARWIN_ARM64: ${{ runner.temp }}/radiochron-binaries/pinned-darwin-arm64/radiochron
-          RADIOCHRON_CORE_BINARY_WIN32_X64: ${{ runner.temp }}/radiochron-binaries/pinned-win32-x64/radiochron-desktop-bridge.exe
-          RADIOCHRON_CORE_BINARY_LINUX_X64: ${{ runner.temp }}/radiochron-binaries/pinned-linux-x64/radiochron-desktop-bridge
-          RADIOCHRON_CORE_BINARY_DARWIN_X64: ${{ runner.temp }}/radiochron-binaries/pinned-darwin-x64/radiochron-desktop-bridge
-          RADIOCHRON_CORE_BINARY_DARWIN_ARM64: ${{ runner.temp }}/radiochron-binaries/pinned-darwin-arm64/radiochron-desktop-bridge
-        run: |
-          npm pack --dry-run
-          node bin.js --version
+          RADIOCHRON_CORE_BINARY_WIN32_X64: ${{ runner.temp }}/radiochron-native/native-win32-x64/radiochron-node-bridge.exe
+          RADIOCHRON_CORE_BINARY_LINUX_X64: ${{ runner.temp }}/radiochron-native/native-linux-x64/radiochron-node-bridge
+          RADIOCHRON_CORE_BINARY_DARWIN_X64: ${{ runner.temp }}/radiochron-native/native-darwin-x64/radiochron-node-bridge
+          RADIOCHRON_CORE_BINARY_DARWIN_ARM64: ${{ runner.temp }}/radiochron-native/native-darwin-arm64/radiochron-node-bridge
+        run: npm pack --dry-run

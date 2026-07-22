@@ -5,8 +5,8 @@ const { createHash } = require('node:crypto');
 const { basename, join, resolve } = require('node:path');
 const { spawnSync } = require('node:child_process');
 
-const manifest = resolve(__dirname, '..', 'native', 'radiochron-desktop-bridge', 'Cargo.toml');
-const executable = process.platform === 'win32' ? 'radiochron-desktop-bridge.exe' : 'radiochron-desktop-bridge';
+const manifest = resolve(__dirname, '..', 'native', 'radiochron-node-bridge', 'Cargo.toml');
+const executable = process.platform === 'win32' ? 'radiochron-node-bridge.exe' : 'radiochron-node-bridge';
 const outputDirectory = resolve(process.env.RADIOCHRON_CORE_OUTPUT_DIR || 'artifacts');
 const result = spawnSync('cargo', ['build', '--locked', '--release', '--manifest-path', manifest], {
   cwd: resolve(__dirname, '..'),
@@ -15,13 +15,13 @@ const result = spawnSync('cargo', ['build', '--locked', '--release', '--manifest
 });
 if (result.status !== 0) throw new Error(`cargo build failed with ${result.status}`);
 
-const source = join(resolve(__dirname, '..'), 'native', 'radiochron-desktop-bridge', 'target', 'release', executable);
+const source = join(resolve(__dirname, '..'), 'native', 'radiochron-node-bridge', 'target', 'release', executable);
 mkdirSync(outputDirectory, { recursive: true });
 const destination = join(outputDirectory, basename(executable));
 copyFileSync(source, destination);
 const sha256 = createHash('sha256').update(readFileSync(destination)).digest('hex');
 writeFileSync(`${destination}.build-info.json`, `${JSON.stringify({
-  name: 'radiochron-desktop-bridge',
+  name: 'radiochron-node-bridge',
   version: '0.1.0',
   core_git_sha: 'f9208c814646c75fca3d1aa1df3606da87b8671c',
   platform: process.platform,
