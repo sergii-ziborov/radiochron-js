@@ -52,6 +52,13 @@ identity and SHA-256 of every native target before it can enter the npm archive.
 CI builds Windows x64, Linux x64/ARM64, Intel Mac, and Apple Silicon variants and
 checks the JavaScript API on supported Node versions.
 
+A matching `v<package-version>` tag publishes only after every native build and
+Node 18/20/22/24 package check passes. The tag workflow uses npm trusted
+publishing (`ci.yml`, GitHub OIDC), verifies every native adapter against its
+build-info SHA-256, and produces npm provenance without a long-lived token.
+The initial package-name claim must be completed once before trusted publishing
+can be enabled on npmjs.com.
+
 ## Repository boundaries
 
 - [`radiochron`](https://github.com/sergii-ziborov/radiochron) — Rust IoT core.
