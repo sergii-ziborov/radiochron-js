@@ -39,7 +39,7 @@ jobs:
         env:
           RADIOCHRON_CORE_OUTPUT_DIR: ${{ runner.temp }}/radiochron-native
         run: node scripts/build-core.js
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: native-${{ matrix.key }}
           path: ${{ runner.temp }}/radiochron-native/*
@@ -55,7 +55,7 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node }}
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v7
         with:
           pattern: native-*
           path: ${{ runner.temp }}/radiochron-native
@@ -86,7 +86,7 @@ jobs:
           node-version: 24
           registry-url: https://registry.npmjs.org
           package-manager-cache: false
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v7
         with:
           pattern: native-*
           path: ${{ runner.temp }}/radiochron-native
