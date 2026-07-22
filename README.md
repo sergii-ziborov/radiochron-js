@@ -52,14 +52,12 @@ identity and SHA-256 of every native target before it can enter the npm archive.
 CI builds Windows x64, Linux x64/ARM64, Intel Mac, and Apple Silicon variants and
 checks the JavaScript API on supported Node versions.
 
-A matching `v<package-version>` tag publishes only after every native build and
-Node 18/20/22/24 package check passes. The tag workflow uses npm trusted
-publishing (`ci.yml`, GitHub OIDC), verifies every native adapter against its
-build-info SHA-256, and produces npm provenance without a long-lived token.
-For the initial package-name claim only, store a granular publish token as the
-`NPM_TOKEN` repository secret and push the matching tag. Then configure
-`ci.yml` as the package's trusted publisher on npmjs.com and revoke/delete that
-one-time secret; subsequent releases use OIDC only.
+Releases are published manually from an authenticated npm console. The archive
+is assembled from the five artifacts of one green CI run, `prepack` verifies
+their identity/core revision/SHA-256, and `npm run verify:package` rejects Rust
+`target/` output, missing platform binaries, or an unexpectedly large archive.
+The version tag is pushed only after the public registry copy is verified; no
+npm credential is stored in GitHub.
 
 ## Repository boundaries
 
