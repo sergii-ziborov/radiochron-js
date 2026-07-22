@@ -96,6 +96,7 @@ jobs:
         run: node -e "const expected = 'v' + require('./package.json').version; if (process.env.RELEASE_TAG !== expected) { throw new Error('tag ' + process.env.RELEASE_TAG + ' must equal ' + expected); }"
       - name: Publish trusted npm package
         env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           RADIOCHRON_CORE_BINARY_WIN32_X64: ${{ runner.temp }}/radiochron-native/native-win32-x64/radiochron-node-bridge.exe
           RADIOCHRON_CORE_BINARY_LINUX_X64: ${{ runner.temp }}/radiochron-native/native-linux-x64/radiochron-node-bridge
           RADIOCHRON_CORE_BINARY_LINUX_ARM64: ${{ runner.temp }}/radiochron-native/native-linux-arm64/radiochron-node-bridge
