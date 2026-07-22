@@ -2,7 +2,7 @@
 
 /** Bundle four native targets and verify each against the pinned MCP commit. */
 
-const { copyFileSync, existsSync, mkdirSync, readFileSync, statSync } = require('node:fs');
+const { chmodSync, copyFileSync, existsSync, mkdirSync, readFileSync, statSync } = require('node:fs');
 const { createHash } = require('node:crypto');
 const { join, resolve } = require('node:path');
 const { spawnSync } = require('node:child_process');
@@ -81,7 +81,9 @@ for (const target of targets) {
 
   const destinationDirectory = join(__dirname, 'vendor', target.key);
   mkdirSync(destinationDirectory, { recursive: true });
-  copyFileSync(source, join(destinationDirectory, target.file));
+  const destination = join(destinationDirectory, target.file);
+  copyFileSync(source, destination);
+  if (target.platform !== 'win32') chmodSync(destination, 0o755);
   const size = statSync(source).size;
   console.log(
     `prepare: bundled ${target.key} (${Math.round(size / 1024)} KB, MCP ${expected.gitSha.slice(0, 12)})`
