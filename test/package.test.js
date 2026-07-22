@@ -18,7 +18,7 @@ test('package metadata binds one exact direct core revision', () => {
 });
 
 test('all source-side package files exist', () => {
-  for (const name of ['core.js', 'core.d.ts', 'prepare.js', 'scripts/build-core.js', 'native/radiochron-node-bridge/Cargo.toml', 'README.md', 'LICENSE-MIT', 'LICENSE-APACHE']) {
+  for (const name of ['core.js', 'core.d.ts', 'prepare.js', 'scripts/build-core.js', 'native/radiochron-node-bridge/Cargo.toml', 'README.md', 'LICENSE-MIT']) {
     assert.equal(existsSync(join(__dirname, '..', name)), true, `${name} is missing`);
   }
 });
@@ -31,6 +31,12 @@ test('package metadata covers Intel and Apple Silicon Macs plus Linux ARM64', ()
   assert(packageJson.files.includes('native/radiochron-node-bridge/src'));
   assert.equal(packageJson.files.includes('native'), false);
   assert.equal(packageJson.files.includes('vendor'), false);
+});
+
+test('only the standalone Node library is MIT licensed', () => {
+  assert.equal(packageJson.license, 'MIT');
+  assert.equal(packageJson.files.includes('LICENSE-MIT'), true);
+  assert.equal(packageJson.files.includes('LICENSE-APACHE'), false);
 });
 
 test('public declarations expose analysis, connectivity and chronicle APIs', () => {

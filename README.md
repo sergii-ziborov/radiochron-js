@@ -8,8 +8,9 @@ It supports Windows x64, Linux x64/ARM64, Intel Mac, and Apple Silicon Mac. The 
 archive carries a small native adapter linked directly to the pinned Rust core;
 JavaScript applications never need to parse platform commands themselves.
 
-> Publication is pending. Until the package is published, install it from this
-> repository or use a local checkout.
+```sh
+npm install radiochron
+```
 
 ## Node API
 
@@ -70,4 +71,5 @@ npm credential is stored in GitHub.
 Apple hosts use CoreWLAN, Linux uses nl80211, and Windows uses the native WLAN
 API through the Rust core.
 
-Dual-licensed under [MIT](LICENSE-MIT) or [Apache-2.0](LICENSE-APACHE).
+Licensed under the [MIT License](LICENSE-MIT). The underlying `radiochron`
+Rust core remains separately dual-licensed under MIT or Apache-2.0.
