@@ -52,6 +52,21 @@ export interface RadioChronInformationElements {
   has_vht: boolean;
   has_he: boolean;
   has_eht: boolean;
+  has_wps: boolean;
+  country_code: string | null;
+  channel_width_mhz: number | null;
+  bss_load: {
+    station_count: number;
+    channel_utilization_percent: number;
+    available_admission_capacity: number;
+  } | null;
+  rsn: {
+    group_cipher: string | null;
+    pairwise_ciphers: string[];
+    akm_suites: string[];
+    pmf_capable: boolean;
+    pmf_required: boolean;
+  } | null;
   [name: string]: unknown;
 }
 
