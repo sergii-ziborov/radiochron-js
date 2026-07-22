@@ -1,0 +1,16 @@
+[package]
+name = "radiochron-desktop-bridge"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.80"
+publish = false
+
+[dependencies]
+anyhow = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+radiochron = { git = "https://github.com/sergii-ziborov/radiochron", rev = "f9208c814646c75fca3d1aa1df3606da87b8671c", default-features = false, features = ["status", "scan", "analyze", "connectivity"] }
+
+[profile.release]
+lto = "thin"
+strip = true

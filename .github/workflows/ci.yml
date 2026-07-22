@@ -30,7 +30,7 @@ jobs:
             binary: radiochron
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@stable
       - name: Build the pinned native MCP revision
         env:
@@ -38,6 +38,10 @@ jobs:
           RADIOCHRON_BINARY_NAME: ${{ matrix.binary }}
           RADIOCHRON_OUTPUT_DIR: ${{ runner.temp }}/radiochron-binary
         run: node scripts/build-pinned.js
+      - name: Build the direct Rust-core bridge
+        env:
+          RADIOCHRON_CORE_OUTPUT_DIR: ${{ runner.temp }}/radiochron-binary
+        run: node scripts/build-core.js
       - uses: actions/upload-artifact@v4
         with:
           name: pinned-${{ matrix.key }}
@@ -50,8 +54,8 @@ jobs:
       matrix:
         node: [18, 20, 22, 24]
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node }}
       - uses: actions/download-artifact@v4
@@ -60,7 +64,9 @@ jobs:
           path: ${{ runner.temp }}/radiochron-binaries
       - run: node --check bin.js
       - run: node --check prepare.js
+      - run: node --check core.js
       - run: node --check scripts/build-pinned.js
+      - run: node --check scripts/build-core.js
       - run: npm test
       - name: Verify package contents and native launcher
         env:
@@ -68,6 +74,10 @@ jobs:
           RADIOCHRON_MCP_BINARY_LINUX_X64: ${{ runner.temp }}/radiochron-binaries/pinned-linux-x64/radiochron
           RADIOCHRON_MCP_BINARY_DARWIN_X64: ${{ runner.temp }}/radiochron-binaries/pinned-darwin-x64/radiochron
           RADIOCHRON_MCP_BINARY_DARWIN_ARM64: ${{ runner.temp }}/radiochron-binaries/pinned-darwin-arm64/radiochron
+          RADIOCHRON_CORE_BINARY_WIN32_X64: ${{ runner.temp }}/radiochron-binaries/pinned-win32-x64/radiochron-desktop-bridge.exe
+          RADIOCHRON_CORE_BINARY_LINUX_X64: ${{ runner.temp }}/radiochron-binaries/pinned-linux-x64/radiochron-desktop-bridge
+          RADIOCHRON_CORE_BINARY_DARWIN_X64: ${{ runner.temp }}/radiochron-binaries/pinned-darwin-x64/radiochron-desktop-bridge
+          RADIOCHRON_CORE_BINARY_DARWIN_ARM64: ${{ runner.temp }}/radiochron-binaries/pinned-darwin-arm64/radiochron-desktop-bridge
         run: |
           npm pack --dry-run
           node bin.js --version

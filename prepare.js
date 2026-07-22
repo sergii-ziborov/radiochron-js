@@ -9,12 +9,18 @@ const { spawnSync } = require('node:child_process');
 const packageJson = require('./package.json');
 
 const expected = packageJson.radiochronMcp;
+const expectedCore = packageJson.radiochronCore;
 const targets = [
   { key: 'win32-x64', env: 'RADIOCHRON_MCP_BINARY_WIN32_X64', file: 'radiochron.exe', platform: 'win32', arch: 'x64' },
   { key: 'linux-x64', env: 'RADIOCHRON_MCP_BINARY_LINUX_X64', file: 'radiochron', platform: 'linux', arch: 'x64' },
   { key: 'darwin-x64', env: 'RADIOCHRON_MCP_BINARY_DARWIN_X64', file: 'radiochron', platform: 'darwin', arch: 'x64' },
   { key: 'darwin-arm64', env: 'RADIOCHRON_MCP_BINARY_DARWIN_ARM64', file: 'radiochron', platform: 'darwin', arch: 'arm64' },
 ];
+const coreTargets = targets.map((target) => ({
+  ...target,
+  env: target.env.replace('RADIOCHRON_MCP_BINARY', 'RADIOCHRON_CORE_BINARY'),
+  file: target.platform === 'win32' ? 'radiochron-desktop-bridge.exe' : 'radiochron-desktop-bridge',
+}));
 
 function run(command, args) {
   const result = spawnSync(command, args, {
@@ -88,4 +94,36 @@ for (const target of targets) {
   console.log(
     `prepare: bundled ${target.key} (${Math.round(size / 1024)} KB, MCP ${expected.gitSha.slice(0, 12)})`
   );
+}
+
+for (const target of coreTargets) {
+  const configured = process.env[target.env];
+  if (!configured) {
+    console.error(`prepare: ${target.env} must point to the verified ${target.key} direct-core bridge`);
+    process.exit(1);
+  }
+  const source = resolve(configured);
+  const sidecar = `${source}.build-info.json`;
+  try {
+    const buildInfo = JSON.parse(readFileSync(sidecar, 'utf8'));
+    const digest = createHash('sha256').update(readFileSync(source)).digest('hex');
+    if (
+      buildInfo.sha256 !== digest ||
+      buildInfo.name !== 'radiochron-desktop-bridge' ||
+      buildInfo.core_git_sha !== expectedCore.gitSha
+    ) {
+      throw new Error('direct-core identity, revision, or SHA-256 mismatch');
+    }
+  } catch (error) {
+    console.error(`prepare: cannot verify ${target.key} direct-core bridge: ${error.message}`);
+    process.exit(1);
+  }
+
+  const destinationDirectory = join(__dirname, 'vendor-core', target.key);
+  mkdirSync(destinationDirectory, { recursive: true });
+  const destination = join(destinationDirectory, target.file);
+  copyFileSync(source, destination);
+  if (target.platform !== 'win32') chmodSync(destination, 0o755);
+  const size = statSync(source).size;
+  console.log(`prepare: bundled direct-core ${target.key} (${Math.round(size / 1024)} KB, core ${expectedCore.gitSha.slice(0, 12)})`);
 }
