@@ -1,21 +1,20 @@
 'use strict';
 
-/**
- * Bundle a release binary from radiochron-mcp and prove that it is the exact
- * cross-repository revision declared in package.json.
- */
+/** Bundle four native targets and verify each against the pinned MCP commit. */
 
-const { copyFileSync, statSync } = require('node:fs');
+const { copyFileSync, existsSync, mkdirSync, readFileSync, statSync } = require('node:fs');
+const { createHash } = require('node:crypto');
 const { join, resolve } = require('node:path');
 const { spawnSync } = require('node:child_process');
 const packageJson = require('./package.json');
 
 const expected = packageJson.radiochronMcp;
-const source = resolve(
-  process.env.RADIOCHRON_MCP_BINARY ||
-    join(__dirname, '..', 'radiochron-mcp', 'target', 'release', 'radiochron.exe')
-);
-const target = join(__dirname, 'radiochron.exe');
+const targets = [
+  { key: 'win32-x64', env: 'RADIOCHRON_MCP_BINARY_WIN32_X64', file: 'radiochron.exe', platform: 'win32', arch: 'x64' },
+  { key: 'linux-x64', env: 'RADIOCHRON_MCP_BINARY_LINUX_X64', file: 'radiochron', platform: 'linux', arch: 'x64' },
+  { key: 'darwin-x64', env: 'RADIOCHRON_MCP_BINARY_DARWIN_X64', file: 'radiochron', platform: 'darwin', arch: 'x64' },
+  { key: 'darwin-arm64', env: 'RADIOCHRON_MCP_BINARY_DARWIN_ARM64', file: 'radiochron', platform: 'darwin', arch: 'arm64' },
+];
 
 function run(command, args) {
   const result = spawnSync(command, args, {
@@ -30,36 +29,61 @@ function run(command, args) {
   return result.stdout.trim();
 }
 
-let size;
-let buildInfo;
 let dirty;
 try {
-  size = statSync(source).size;
-  buildInfo = JSON.parse(run(source, ['--build-info']));
   dirty = run('git', ['status', '--porcelain', '--untracked-files=all']);
 } catch (error) {
-  console.error(`prepare: cannot verify MCP binary provenance: ${error.message}`);
+  console.error(`prepare: cannot inspect package provenance: ${error.message}`);
   process.exit(1);
 }
-
 if (dirty) {
   console.error('prepare: working tree is not clean. Commit the exact package sources first.');
   process.exit(1);
 }
-if (buildInfo.version !== packageJson.version || buildInfo.version !== expected.version) {
-  console.error(
-    `prepare: binary version ${buildInfo.version} does not match package/MCP version ${packageJson.version}/${expected.version}`
-  );
-  process.exit(1);
-}
-if (buildInfo.git_sha !== expected.gitSha) {
-  console.error(
-    `prepare: binary came from MCP ${buildInfo.git_sha}; package requires ${expected.gitSha}`
-  );
-  process.exit(1);
-}
 
-copyFileSync(source, target);
-console.log(
-  `prepare: bundled radiochron.exe (${Math.round(size / 1024)} KB, MCP ${expected.gitSha.slice(0, 12)})`
-);
+for (const target of targets) {
+  const configured = process.env[target.env];
+  if (!configured) {
+    console.error(`prepare: ${target.env} must point to the verified ${target.key} binary`);
+    process.exit(1);
+  }
+  const source = resolve(configured);
+  const sidecar = `${source}.build-info.json`;
+  let buildInfo;
+  try {
+    if (existsSync(sidecar)) {
+      buildInfo = JSON.parse(readFileSync(sidecar, 'utf8'));
+      const digest = createHash('sha256').update(readFileSync(source)).digest('hex');
+      if (buildInfo.sha256 !== digest) {
+        throw new Error('binary SHA-256 does not match its native build sidecar');
+      }
+    } else if (process.platform === target.platform && process.arch === target.arch) {
+      buildInfo = JSON.parse(run(source, ['--build-info']));
+    } else {
+      throw new Error(`foreign binary requires ${sidecar}`);
+    }
+  } catch (error) {
+    console.error(`prepare: cannot verify ${target.key} provenance: ${error.message}`);
+    process.exit(1);
+  }
+  if (
+    buildInfo.name !== 'radiochron' ||
+    buildInfo.version !== packageJson.version ||
+    buildInfo.version !== expected.version
+  ) {
+    console.error(`prepare: ${target.key} identity/version does not match package ${packageJson.version}`);
+    process.exit(1);
+  }
+  if (buildInfo.git_sha !== expected.gitSha) {
+    console.error(`prepare: ${target.key} came from MCP ${buildInfo.git_sha}; package requires ${expected.gitSha}`);
+    process.exit(1);
+  }
+
+  const destinationDirectory = join(__dirname, 'vendor', target.key);
+  mkdirSync(destinationDirectory, { recursive: true });
+  copyFileSync(source, join(destinationDirectory, target.file));
+  const size = statSync(source).size;
+  console.log(
+    `prepare: bundled ${target.key} (${Math.round(size / 1024)} KB, MCP ${expected.gitSha.slice(0, 12)})`
+  );
+}

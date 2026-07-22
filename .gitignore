@@ -1,5 +1,6 @@
 /node_modules
 /radiochron.exe
+/vendor/
 /*.tgz
 .idea/
 .vscode/

@@ -1,7 +1,7 @@
 # radiochron
 
-The npm delivery package for [RadioChron](https://radiochron.com). It ships the
-prebuilt Windows binary from
+The npm delivery package for [RadioChron](https://radiochron.com). It ships
+prebuilt Windows, Linux and macOS binaries from
 [`radiochron-mcp`](https://github.com/sergii-ziborov/radiochron-mcp), so an MCP
 client needs Node.js but no Rust, Visual Studio, PowerShell, or .NET toolchain.
 
@@ -18,10 +18,12 @@ Or in any MCP client config:
 { "mcpServers": { "radiochron": { "command": "npx", "args": ["-y", "radiochron"] } } }
 ```
 
-The launcher exposes eleven typed tools: seven Wi-Fi/network diagnostics plus
+The launcher exposes ten portable typed tools plus Windows event history:
+six Wi-Fi/network diagnostics plus
 `chronicle_start`, `chronicle_stop`, `chronicle_status`, and
 `chronicle_recent`. `connectivity_diagnose` separates radio, authentication,
-IP/DHCP, DNS, TCP and explicit Internet reachability. Nothing reads saved
+DHCP/static IP, gateway, DNS, TCP, captive portal, packet quality and explicit
+Internet reachability. Nothing reads saved
 passwords or sends telemetry on its own.
 
 ## Provenance
@@ -37,8 +39,9 @@ commit. CI independently checks this boundary on Node 18, 20, 22, and 24.
 - [`radiochron-mcp`](https://github.com/sergii-ziborov/radiochron-mcp) — MCP server
 - [`radiochron-site`](https://github.com/sergii-ziborov/radiochron-site) — website source
 
-This npm launcher remains Windows-only. The core and `radiochron-agent` now
-support Linux through nl80211; macOS CoreWLAN remains on the
-[roadmap](https://radiochron.com/#roadmap).
+The launcher selects a bundled native binary for Windows x64, Linux x64,
+Intel Mac, or Apple Silicon Mac. Apple hosts use CoreWLAN; Linux uses nl80211.
+WLAN AutoConfig history is Windows-only, while the portable tools and local
+chronicle remain available everywhere.
 
 Dual-licensed under [MIT](LICENSE-MIT) or [Apache-2.0](LICENSE-APACHE).

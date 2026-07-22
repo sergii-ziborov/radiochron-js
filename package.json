@@ -1,16 +1,16 @@
 {
   "name": "radiochron",
   "version": "0.2.0",
-  "description": "Prebuilt RadioChron Wi-Fi diagnostics MCP server. One-line install, no Rust toolchain.",
+  "description": "Prebuilt cross-platform RadioChron Wi-Fi diagnostics MCP server. One-line install, no Rust toolchain.",
   "bin": { "radiochron": "bin.js" },
-  "files": ["bin.js", "radiochron.exe", "README.md", "LICENSE-MIT", "LICENSE-APACHE"],
+  "files": ["bin.js", "vendor", "README.md", "LICENSE-MIT", "LICENSE-APACHE"],
   "scripts": {
     "test": "node --test",
     "prepack": "node prepare.js"
   },
   "radiochronMcp": {
     "version": "0.2.0",
-    "gitSha": "76b7765bc6f1cb355177519b917f4c1efb5e9ac9",
+    "gitSha": "c2d6e9c18efbd9ec6bd225208ef9b5cab65bede4",
     "repository": "https://github.com/sergii-ziborov/radiochron-mcp"
   },
   "license": "(MIT OR Apache-2.0)",
@@ -21,6 +21,6 @@
     "url": "git+https://github.com/sergii-ziborov/radiochron-js.git"
   },
   "bugs": { "url": "https://github.com/sergii-ziborov/radiochron-js/issues" },
-  "keywords": ["mcp", "model-context-protocol", "wifi", "wlan", "diagnostics", "network", "windows", "rust"],
+  "keywords": ["mcp", "model-context-protocol", "wifi", "wlan", "diagnostics", "network", "windows", "linux", "macos", "apple-silicon", "rust"],
   "engines": { "node": ">=18" }
 }

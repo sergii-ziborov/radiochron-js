@@ -13,7 +13,13 @@ test('package metadata binds one exact MCP revision', () => {
 });
 
 test('all source-side package files exist', () => {
-  for (const name of ['bin.js', 'prepare.js', 'README.md', 'LICENSE-MIT', 'LICENSE-APACHE']) {
+  for (const name of ['bin.js', 'prepare.js', 'scripts/build-pinned.js', 'README.md', 'LICENSE-MIT', 'LICENSE-APACHE']) {
     assert.equal(existsSync(join(__dirname, '..', name)), true, `${name} is missing`);
   }
+});
+
+test('package metadata covers Intel and Apple Silicon Macs', () => {
+  assert.match(packageJson.description, /cross-platform/i);
+  assert(packageJson.keywords.includes('apple-silicon'));
+  assert(packageJson.files.includes('vendor'));
 });

@@ -1,39 +1,37 @@
 #!/usr/bin/env node
 'use strict';
 
-/**
- * RadioChron MCP server launcher.
- *
- * The engine is a prebuilt native binary shipped inside this package, so the
- * one-liner works with nothing but Node:
- *
- *   claude mcp add radiochron -- npx -y radiochron
- *
- * stdio is inherited: the MCP client talks JSON-RPC straight to the engine,
- * this launcher just finds and starts it.
- */
+/** RadioChron MCP native-binary launcher. */
 
 const { spawnSync } = require('node:child_process');
-const { join } = require('node:path');
 const { existsSync } = require('node:fs');
+const { join } = require('node:path');
 
-if (process.platform !== 'win32') {
+const targets = {
+  'win32-x64': ['win32-x64', 'radiochron.exe'],
+  'linux-x64': ['linux-x64', 'radiochron'],
+  'darwin-x64': ['darwin-x64', 'radiochron'],
+  'darwin-arm64': ['darwin-arm64', 'radiochron'],
+};
+const key = `${process.platform}-${process.arch}`;
+const target = targets[key];
+
+if (!target) {
   process.stderr.write(
-    [
-      'radiochron: the collector engine is Windows-only today.',
-      'Linux (nl80211) and macOS (CoreWLAN) collectors are on the roadmap:',
-      'https://radiochron.com/#roadmap',
-      ''
-    ].join('\n')
+    `radiochron: unsupported platform ${key}; supported: ${Object.keys(targets).join(', ')}\n`
   );
   process.exit(1);
 }
 
-const exe = join(__dirname, 'radiochron.exe');
-if (!existsSync(exe)) {
-  process.stderr.write('radiochron: bundled engine missing — broken install, try reinstalling.\n');
+const executable = join(__dirname, 'vendor', target[0], target[1]);
+if (!existsSync(executable)) {
+  process.stderr.write(`radiochron: bundled ${key} engine is missing — reinstall the package.\n`);
   process.exit(1);
 }
 
-const result = spawnSync(exe, process.argv.slice(2), { stdio: 'inherit' });
+const result = spawnSync(executable, process.argv.slice(2), { stdio: 'inherit' });
+if (result.error) {
+  process.stderr.write(`radiochron: could not start ${key} engine: ${result.error.message}\n`);
+  process.exit(1);
+}
 process.exit(result.status === null ? 1 : result.status);
