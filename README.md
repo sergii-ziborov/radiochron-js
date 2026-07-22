@@ -18,9 +18,11 @@ Or in any MCP client config:
 { "mcpServers": { "radiochron": { "command": "npx", "args": ["-y", "radiochron"] } } }
 ```
 
-The launcher exposes ten typed tools: six Wi-Fi diagnostics plus
+The launcher exposes eleven typed tools: seven Wi-Fi/network diagnostics plus
 `chronicle_start`, `chronicle_stop`, `chronicle_status`, and
-`chronicle_recent`. Nothing reads saved passwords or sends telemetry.
+`chronicle_recent`. `connectivity_diagnose` separates radio, authentication,
+IP/DHCP, DNS, TCP and explicit Internet reachability. Nothing reads saved
+passwords or sends telemetry on its own.
 
 ## Provenance
 
@@ -31,10 +33,12 @@ commit. CI independently checks this boundary on Node 18, 20, 22, and 24.
 ## Repository family
 
 - [`radiochron`](https://github.com/sergii-ziborov/radiochron) — IoT/core Rust library
+- [`radiochron-agent`](https://github.com/sergii-ziborov/radiochron-agent) — Linux/Windows fleet daemon and exporters
 - [`radiochron-mcp`](https://github.com/sergii-ziborov/radiochron-mcp) — MCP server
 - [`radiochron-site`](https://github.com/sergii-ziborov/radiochron-site) — website source
 
-Windows-only today. Linux via nl80211 and macOS via CoreWLAN remain on the
+This npm launcher remains Windows-only. The core and `radiochron-agent` now
+support Linux through nl80211; macOS CoreWLAN remains on the
 [roadmap](https://radiochron.com/#roadmap).
 
 Dual-licensed under [MIT](LICENSE-MIT) or [Apache-2.0](LICENSE-APACHE).

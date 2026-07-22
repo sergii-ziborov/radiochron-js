@@ -10,7 +10,7 @@
   },
   "radiochronMcp": {
     "version": "0.2.0",
-    "gitSha": "d83e88705c07be896d19c51975c6b3798ed9ff67",
+    "gitSha": "45bf1a3cac4cbae01c332e7534d485ce47dd3187",
     "repository": "https://github.com/sergii-ziborov/radiochron-mcp"
   },
   "license": "(MIT OR Apache-2.0)",
