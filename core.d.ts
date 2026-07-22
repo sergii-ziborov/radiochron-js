@@ -216,12 +216,21 @@ export interface RadioChronChronicleStatus {
   last_error: string | null;
 }
 
+export type RadioChronClockQuality = 'unknown' | 'synchronized' | 'unsynchronized';
+
+export interface RadioChronClockMetadata {
+  quality: RadioChronClockQuality;
+  source: string;
+  monotonic_ms: number;
+}
+
 export interface RadioChronChronicleEntry {
   schema_version: number;
   device_id?: string;
   boot_id: string;
   sequence: number;
   event_id: string;
+  clock: RadioChronClockMetadata;
   epoch_seconds: number;
   time: string;
   interface_guid?: string;

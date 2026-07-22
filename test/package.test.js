@@ -35,7 +35,7 @@ test('package metadata covers Intel and Apple Silicon Macs plus Linux ARM64', ()
 
 test('public declarations expose analysis, connectivity and chronicle APIs', () => {
   const declarations = require('node:fs').readFileSync(join(__dirname, '..', 'core.d.ts'), 'utf8');
-  for (const symbol of ['analyze(', 'sample(', 'diagnoseConnectivity(', 'RadioChronChronicleClient']) {
+  for (const symbol of ['analyze(', 'sample(', 'diagnoseConnectivity(', 'RadioChronChronicleClient', 'RadioChronClockMetadata', 'clock: RadioChronClockMetadata']) {
     assert.match(declarations, new RegExp(symbol.replace('(', '\\(')));
   }
 });

@@ -1,6 +1,6 @@
 {
   "name": "radiochron",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Cross-platform Node.js API for the RadioChron Rust Wi-Fi diagnostics core.",
   "main": "core.js",
   "types": "core.d.ts",
