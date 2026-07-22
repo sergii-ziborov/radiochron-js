@@ -71,6 +71,8 @@ jobs:
           RADIOCHRON_CORE_BINARY_DARWIN_X64: ${{ runner.temp }}/radiochron-native/native-darwin-x64/radiochron-node-bridge
           RADIOCHRON_CORE_BINARY_DARWIN_ARM64: ${{ runner.temp }}/radiochron-native/native-darwin-arm64/radiochron-node-bridge
         run: npm pack --dry-run
+      - name: Reject build artifacts and verify every native target
+        run: npm run verify:package
 
   publish:
     if: startsWith(github.ref, 'refs/tags/v')

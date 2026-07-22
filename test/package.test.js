@@ -28,6 +28,8 @@ test('package metadata covers Intel and Apple Silicon Macs plus Linux ARM64', ()
   assert(packageJson.keywords.includes('apple-silicon'));
   assert(packageJson.keywords.includes('linux-arm64'));
   assert(packageJson.files.includes('vendor-core'));
+  assert(packageJson.files.includes('native/radiochron-node-bridge/src'));
+  assert.equal(packageJson.files.includes('native'), false);
   assert.equal(packageJson.files.includes('vendor'), false);
 });
 

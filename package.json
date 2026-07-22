@@ -9,10 +9,21 @@
     "./core": { "types": "./core.d.ts", "require": "./core.js", "default": "./core.js" },
     "./package.json": "./package.json"
   },
-  "files": ["core.js", "core.d.ts", "native", "vendor-core", "README.md", "LICENSE-MIT", "LICENSE-APACHE"],
+  "files": [
+    "core.js",
+    "core.d.ts",
+    "native/radiochron-node-bridge/Cargo.lock",
+    "native/radiochron-node-bridge/Cargo.toml",
+    "native/radiochron-node-bridge/src",
+    "vendor-core",
+    "README.md",
+    "LICENSE-MIT",
+    "LICENSE-APACHE"
+  ],
   "scripts": {
     "test": "node --test",
     "build:core": "node scripts/build-core.js",
+    "verify:package": "node scripts/verify-package.js",
     "prepack": "node prepare.js"
   },
   "radiochronCore": {
