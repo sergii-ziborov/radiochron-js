@@ -314,7 +314,20 @@ export interface RadioChronBleObservationResult extends RadioChronBleIdentityRes
   findings: RadioChronBleFinding[];
 }
 
+export interface RadioChronBleScanOptions {
+  durationMs?: number;
+  timeoutMs?: number;
+}
+
+export interface RadioChronBleScanResult {
+  adapter_count: number;
+  elapsed_ms: number;
+  advertisements: RadioChronBleAdvertisement[];
+  errors: string[];
+}
+
 export interface RadioChronBleClient {
+  scan(options?: RadioChronBleScanOptions): Promise<RadioChronBleScanResult>;
   identify(advertisement: RadioChronBleAdvertisement, timeoutMs?: number): Promise<RadioChronBleIdentityResult>;
   resetTracker(policy?: RadioChronBleTrackerPolicy, timeoutMs?: number): Promise<{ reset: true }>;
   observe(observation: RadioChronBleObservation, timeoutMs?: number): Promise<RadioChronBleObservationResult>;

@@ -31,6 +31,7 @@ const recentChanges = await radiochron.chronicle.recent({ maxEntries: 100 });
 await radiochron.chronicle.stop();
 
 const identity = await radiochron.ble.identify(advertisement);
+const scan = await radiochron.ble.scan({ durationMs: 5_000 });
 await radiochron.ble.resetTracker({ persistent_unknown_ms: 60_000 });
 const result = await radiochron.ble.observe(timedObservation);
 const histories = await radiochron.ble.histories();
@@ -39,9 +40,11 @@ const histories = await radiochron.ble.histories();
 `radiochron/core` remains an equivalent explicit export for applications that
 prefer it. The typed API covers status, scan, detailed BSS inventory, caveated
 analysis, connection sampling, caller-targeted connectivity diagnosis, and the
-change-only chronicle. The `ble` API accepts advertisements from any Node BLE
-transport and provides protocol-aware identity, stateful history and caveated
-risk evidence. It does not silently install or start a platform BLE scanner.
+change-only chronicle. The `ble` API can scan through native Windows
+Bluetooth, Linux BlueZ or macOS CoreBluetooth and can also accept
+advertisements from another Node BLE transport. It provides protocol-aware
+identity, stateful history and caveated risk evidence. Scanning only starts
+when `ble.scan()` is called.
 `call()` remains available as a low-level escape hatch.
 
 The adapter uses a private newline-delimited request protocol between Node and

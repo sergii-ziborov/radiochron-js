@@ -50,6 +50,7 @@ class RadioChronCoreClient {
       recent: (chronicleOptions = {}) => this.chronicleRecent(chronicleOptions)
     });
     this.ble = Object.freeze({
+      scan: (scanOptions = {}) => this.bleScan(scanOptions),
       identify: (advertisement, timeoutMs) => this.bleIdentify(advertisement, timeoutMs),
       resetTracker: (policy = {}, timeoutMs) => this.bleResetTracker(policy, timeoutMs),
       observe: (observation, timeoutMs) => this.bleObserve(observation, timeoutMs),
@@ -150,6 +151,12 @@ class RadioChronCoreClient {
     return this.call('ble_identify', { advertisement }, timeoutMs);
   }
 
+  bleScan(options = {}) {
+    const durationMs = options.durationMs ?? 5_000;
+    const timeoutMs = options.timeoutMs ?? Math.max(DEFAULT_TIMEOUT_MS, durationMs + 10_000);
+    return this.call('ble_scan', compact({ duration_ms: options.durationMs }), timeoutMs);
+  }
+
   bleResetTracker(policy = {}, timeoutMs) {
     return this.call('ble_tracker_reset', { policy }, timeoutMs);
   }
@@ -241,6 +248,7 @@ const chronicle = Object.freeze({
   recent: (options = {}) => getRadioChronCoreClient().chronicle.recent(options)
 });
 const ble = Object.freeze({
+  scan: (options = {}) => getRadioChronCoreClient().ble.scan(options),
   identify: (advertisement, timeoutMs) => getRadioChronCoreClient().ble.identify(advertisement, timeoutMs),
   resetTracker: (policy = {}, timeoutMs) => getRadioChronCoreClient().ble.resetTracker(policy, timeoutMs),
   observe: (observation, timeoutMs) => getRadioChronCoreClient().ble.observe(observation, timeoutMs),

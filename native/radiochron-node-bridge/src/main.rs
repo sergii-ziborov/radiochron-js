@@ -1,5 +1,6 @@
 mod ble;
 mod chronicle;
+mod native_ble;
 
 use std::io::{self, BufRead, Write};
 use std::time::Duration;
@@ -108,6 +109,7 @@ fn handle(bridge: &Bridge, method: &str, params: &Value) -> anyhow::Result<Value
         "chronicle_start" => &["interval_seconds", "signal_threshold_db"],
         "chronicle_recent" => &["max_entries"],
         "ble_identify" => &["advertisement"],
+        "ble_scan" => &["duration_ms"],
         "ble_tracker_reset" => &["policy"],
         "ble_observe" => &["observation"],
         "ble_evaluate" => &["now_ms"],
@@ -132,6 +134,7 @@ fn handle(bridge: &Bridge, method: &str, params: &Value) -> anyhow::Result<Value
         "wifi_sample" => sample_connection(params),
         "connectivity_diagnose" => diagnose_connectivity(params),
         "ble_identify" => bridge.ble.identify(params),
+        "ble_scan" => native_ble::scan(params),
         "ble_tracker_reset" => bridge.ble.reset(params),
         "ble_observe" => bridge.ble.observe(params),
         "ble_histories" => bridge.ble.histories(),

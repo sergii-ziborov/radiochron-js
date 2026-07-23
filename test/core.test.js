@@ -46,6 +46,7 @@ test('typed API maps camelCase options onto the native bridge contract', async (
     address_type: 'random_static',
     rssi_dbm: -50
   });
+  await client.ble.scan({ durationMs: 750, timeoutMs: 5_000 });
   await client.ble.evaluate(1_000);
 
   assert.deepEqual(calls[0], {
@@ -80,5 +81,10 @@ test('typed API maps camelCase options onto the native bridge contract', async (
     },
     timeoutMs: undefined
   });
-  assert.deepEqual(calls[6].params, { now_ms: 1_000 });
+  assert.deepEqual(calls[6], {
+    method: 'ble_scan',
+    params: { duration_ms: 750 },
+    timeoutMs: 5_000
+  });
+  assert.deepEqual(calls[7].params, { now_ms: 1_000 });
 });

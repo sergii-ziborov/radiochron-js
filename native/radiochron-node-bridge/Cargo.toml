@@ -2,13 +2,15 @@
 name = "radiochron-node-bridge"
 version = "0.2.0"
 edition = "2021"
-rust-version = "1.80"
+rust-version = "1.85"
 publish = false
 
 [dependencies]
 anyhow = "1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+btleplug = "0.12.0"
+tokio = { version = "1.50", features = ["rt", "time"] }
 radiochron = { git = "https://github.com/sergii-ziborov/radiochron", rev = "fbd91670c4f15ce6d0e791d78da15189afb9f7e9", version = "0.4.0", default-features = false, features = ["status", "scan", "analyze", "sample", "record", "connectivity", "ble"] }
 
 [profile.release]
