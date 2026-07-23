@@ -1,6 +1,6 @@
 [package]
 name = "radiochron-node-bridge"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 rust-version = "1.80"
 publish = false
@@ -9,7 +9,7 @@ publish = false
 anyhow = "1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-radiochron = { git = "https://github.com/sergii-ziborov/radiochron", rev = "c5c3b4c30b5395b2c8cbc459f4e85982e5fdbb4a", version = "0.3.0", default-features = false, features = ["status", "scan", "analyze", "sample", "record", "connectivity"] }
+radiochron = { git = "https://github.com/sergii-ziborov/radiochron", rev = "fbd91670c4f15ce6d0e791d78da15189afb9f7e9", version = "0.4.0", default-features = false, features = ["status", "scan", "analyze", "sample", "record", "connectivity", "ble"] }
 
 [profile.release]
 lto = "thin"

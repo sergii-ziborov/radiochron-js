@@ -207,6 +207,121 @@ export interface RadioChronConnectivityReport {
   internet: RadioChronDiagnosticStage;
 }
 
+export type RadioChronBleAddressType =
+  | 'public'
+  | 'random_static'
+  | 'resolvable_private'
+  | 'non_resolvable_private'
+  | 'unknown';
+
+export interface RadioChronBleManufacturerData {
+  company_id: number;
+  data: number[];
+}
+
+export interface RadioChronBleServiceData {
+  uuid: string;
+  data: number[];
+}
+
+export interface RadioChronBleAdvertisement {
+  address: string;
+  address_type: RadioChronBleAddressType;
+  local_name?: string | null;
+  rssi_dbm: number;
+  tx_power_dbm?: number | null;
+  connectable?: boolean | null;
+  service_uuids?: string[];
+  manufacturer_data?: RadioChronBleManufacturerData[];
+  service_data?: RadioChronBleServiceData[];
+  protocol_identity?: string | null;
+}
+
+export interface RadioChronBleSensorContext {
+  sensor_id: string;
+  zone?: string | null;
+  movement_session?: string | null;
+  sensor_is_moving: boolean;
+}
+
+export interface RadioChronBleObservation {
+  monotonic_ms: number;
+  unix_epoch_ms?: number | null;
+  context: RadioChronBleSensorContext;
+  advertisement: RadioChronBleAdvertisement;
+}
+
+export type RadioChronBleIdentityConfidence =
+  | 'protocol'
+  | 'caller_provided'
+  | 'static_address'
+  | 'ephemeral_address';
+
+export interface RadioChronBleIdentity {
+  key: string;
+  confidence: RadioChronBleIdentityConfidence;
+  protocol: string | null;
+}
+
+export interface RadioChronBleHistory {
+  identity: RadioChronBleIdentity;
+  first_seen_ms: number;
+  last_seen_ms: number;
+  observation_count: number;
+  sensor_count: number;
+  movement_session_count: number;
+  rssi_min_dbm: number;
+  rssi_max_dbm: number;
+  rssi_mean_dbm: number;
+  last_payload_hash: string;
+}
+
+export type RadioChronBleRiskKind =
+  | 'persistent_unknown'
+  | 'co_travel'
+  | 'disappeared'
+  | 'possible_clone'
+  | 'beacon_flood';
+
+export interface RadioChronBleFinding {
+  kind: RadioChronBleRiskKind;
+  severity: 'info' | 'warning' | 'high';
+  identity_key: string | null;
+  observed_at_ms: number;
+  summary: string;
+  evidence: string[];
+  limitations: string[];
+}
+
+export interface RadioChronBleTrackerPolicy {
+  persistent_unknown_ms?: number;
+  co_travel_min_sessions?: number;
+  disappearance_ms?: number;
+  clone_window_ms?: number;
+  flood_window_ms?: number;
+  flood_unique_identities?: number;
+  allowlisted_identity_keys?: string[];
+  expected_identity_keys?: string[];
+}
+
+export interface RadioChronBleIdentityResult {
+  identity: RadioChronBleIdentity;
+  payload_hash: string;
+}
+
+export interface RadioChronBleObservationResult extends RadioChronBleIdentityResult {
+  history: RadioChronBleHistory;
+  findings: RadioChronBleFinding[];
+}
+
+export interface RadioChronBleClient {
+  identify(advertisement: RadioChronBleAdvertisement, timeoutMs?: number): Promise<RadioChronBleIdentityResult>;
+  resetTracker(policy?: RadioChronBleTrackerPolicy, timeoutMs?: number): Promise<{ reset: true }>;
+  observe(observation: RadioChronBleObservation, timeoutMs?: number): Promise<RadioChronBleObservationResult>;
+  histories(timeoutMs?: number): Promise<RadioChronBleHistory[]>;
+  evaluate(nowMs: number, timeoutMs?: number): Promise<RadioChronBleFinding[]>;
+}
+
 export interface RadioChronChronicleStatus {
   running: boolean;
   path: string;
@@ -291,6 +406,7 @@ export interface RadioChronChronicleClient {
 export class RadioChronCoreClient {
   constructor(options?: RadioChronCoreClientOptions);
   readonly chronicle: RadioChronChronicleClient;
+  readonly ble: RadioChronBleClient;
   call<T = unknown>(method: string, params?: Record<string, unknown>, timeoutMs?: number): Promise<T>;
   ping(): Promise<RadioChronPing>;
   status(): Promise<RadioChronWifiStatus[]>;
@@ -310,6 +426,7 @@ export class RadioChronCoreClient {
 }
 
 export const chronicle: RadioChronChronicleClient;
+export const ble: RadioChronBleClient;
 export function ping(): Promise<RadioChronPing>;
 export function status(): Promise<RadioChronWifiStatus[]>;
 export function scan(timeoutMs?: number): Promise<RadioChronScanResult>;

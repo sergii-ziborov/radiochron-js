@@ -41,6 +41,12 @@ test('typed API maps camelCase options onto the native bridge contract', async (
   await client.diagnoseConnectivity({ dnsName: 'broker.lan', tcpTarget: 'broker.lan:1883', probeTimeoutMs: 800 });
   await client.chronicle.start({ intervalSeconds: 2, signalThresholdDb: 6 });
   await client.chronicle.recent({ maxEntries: 25 });
+  await client.ble.identify({
+    address: 'aa',
+    address_type: 'random_static',
+    rssi_dbm: -50
+  });
+  await client.ble.evaluate(1_000);
 
   assert.deepEqual(calls[0], {
     method: 'wifi_analyze',
@@ -63,4 +69,16 @@ test('typed API maps camelCase options onto the native bridge contract', async (
     signal_threshold_db: 6
   });
   assert.deepEqual(calls[4].params, { max_entries: 25 });
+  assert.deepEqual(calls[5], {
+    method: 'ble_identify',
+    params: {
+      advertisement: {
+        address: 'aa',
+        address_type: 'random_static',
+        rssi_dbm: -50
+      }
+    },
+    timeoutMs: undefined
+  });
+  assert.deepEqual(calls[6].params, { now_ms: 1_000 });
 });

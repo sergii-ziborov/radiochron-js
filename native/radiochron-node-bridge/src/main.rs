@@ -1,9 +1,11 @@
+mod ble;
 mod chronicle;
 
 use std::io::{self, BufRead, Write};
 use std::time::Duration;
 
 use anyhow::Context;
+use ble::BleService;
 use chronicle::ChronicleService;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
@@ -26,12 +28,14 @@ struct Response {
 }
 
 struct Bridge {
+    ble: BleService,
     chronicle: ChronicleService,
 }
 
 impl Bridge {
     fn new() -> Self {
         Self {
+            ble: BleService::new(),
             chronicle: ChronicleService::new(),
         }
     }
@@ -86,7 +90,8 @@ fn respond(bridge: &Bridge, request: Request) -> Response {
 
 fn handle(bridge: &Bridge, method: &str, params: &Value) -> anyhow::Result<Value> {
     let allowed: &[&str] = match method {
-        "ping" | "wifi_status" | "wifi_scan" | "chronicle_stop" | "chronicle_status" => &[],
+        "ping" | "wifi_status" | "wifi_scan" | "chronicle_stop" | "chronicle_status"
+        | "ble_histories" => &[],
         "wifi_networks" | "wifi_analyze" => &["refresh_scan"],
         "wifi_sample" => &["interface_guid", "duration_seconds", "interval_ms"],
         "connectivity_diagnose" => &[
@@ -102,6 +107,10 @@ fn handle(bridge: &Bridge, method: &str, params: &Value) -> anyhow::Result<Value
         ],
         "chronicle_start" => &["interval_seconds", "signal_threshold_db"],
         "chronicle_recent" => &["max_entries"],
+        "ble_identify" => &["advertisement"],
+        "ble_tracker_reset" => &["policy"],
+        "ble_observe" => &["observation"],
+        "ble_evaluate" => &["now_ms"],
         _ => anyhow::bail!("unsupported Node adapter method: {method}"),
     };
     reject_unknown_arguments(params, allowed)?;
@@ -109,7 +118,7 @@ fn handle(bridge: &Bridge, method: &str, params: &Value) -> anyhow::Result<Value
     match method {
         "ping" => Ok(json!({
             "engine": "radiochron",
-            "core_version": "0.3.0",
+            "core_version": "0.4.0",
             "transport": "node_adapter",
             "platform": std::env::consts::OS,
             "arch": std::env::consts::ARCH
@@ -122,6 +131,11 @@ fn handle(bridge: &Bridge, method: &str, params: &Value) -> anyhow::Result<Value
         "wifi_analyze" => analyze_environment(params),
         "wifi_sample" => sample_connection(params),
         "connectivity_diagnose" => diagnose_connectivity(params),
+        "ble_identify" => bridge.ble.identify(params),
+        "ble_tracker_reset" => bridge.ble.reset(params),
+        "ble_observe" => bridge.ble.observe(params),
+        "ble_histories" => bridge.ble.histories(),
+        "ble_evaluate" => bridge.ble.evaluate(params),
         "chronicle_start" => {
             let interval = bounded_u64(params, "interval_seconds", 5, 1, 300)?;
             let threshold = bounded_i32(params, "signal_threshold_db", 8, 1, 50)?;
@@ -296,26 +310,4 @@ fn bounded_i32(
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn ping_identifies_node_adapter_transport() {
-        let result = handle(&Bridge::new(), "ping", &json!({})).unwrap();
-        assert_eq!(result["engine"], "radiochron");
-        assert_eq!(result["transport"], "node_adapter");
-    }
-
-    #[test]
-    fn unknown_methods_and_parameters_fail_closed() {
-        let bridge = Bridge::new();
-        assert!(handle(&bridge, "unknown", &Value::Null).is_err());
-        assert!(handle(&bridge, "wifi_status", &json!({"surprise": true})).is_err());
-    }
-
-    #[test]
-    fn bounded_parameters_reject_values_outside_the_contract() {
-        assert!(sample_connection(&json!({"duration_seconds": 0})).is_err());
-        assert!(diagnose_connectivity(&json!({"timeout_ms": 99})).is_err());
-    }
-}
+mod tests;

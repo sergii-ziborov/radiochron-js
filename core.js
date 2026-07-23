@@ -49,6 +49,13 @@ class RadioChronCoreClient {
       status: () => this.chronicleStatus(),
       recent: (chronicleOptions = {}) => this.chronicleRecent(chronicleOptions)
     });
+    this.ble = Object.freeze({
+      identify: (advertisement, timeoutMs) => this.bleIdentify(advertisement, timeoutMs),
+      resetTracker: (policy = {}, timeoutMs) => this.bleResetTracker(policy, timeoutMs),
+      observe: (observation, timeoutMs) => this.bleObserve(observation, timeoutMs),
+      histories: (timeoutMs) => this.bleHistories(timeoutMs),
+      evaluate: (nowMs, timeoutMs) => this.bleEvaluate(nowMs, timeoutMs)
+    });
   }
 
   call(method, params = {}, timeoutMs = DEFAULT_TIMEOUT_MS) {
@@ -139,6 +146,26 @@ class RadioChronCoreClient {
     return this.call('chronicle_recent', compact({ max_entries: options.maxEntries }), options.timeoutMs);
   }
 
+  bleIdentify(advertisement, timeoutMs) {
+    return this.call('ble_identify', { advertisement }, timeoutMs);
+  }
+
+  bleResetTracker(policy = {}, timeoutMs) {
+    return this.call('ble_tracker_reset', { policy }, timeoutMs);
+  }
+
+  bleObserve(observation, timeoutMs) {
+    return this.call('ble_observe', { observation }, timeoutMs);
+  }
+
+  bleHistories(timeoutMs) {
+    return this.call('ble_histories', {}, timeoutMs);
+  }
+
+  bleEvaluate(nowMs, timeoutMs) {
+    return this.call('ble_evaluate', { now_ms: nowMs }, timeoutMs);
+  }
+
   dispose() {
     const child = this.child;
     this.failAll(new Error('RadioChron core bridge disposed'));
@@ -213,10 +240,18 @@ const chronicle = Object.freeze({
   status: () => getRadioChronCoreClient().chronicle.status(),
   recent: (options = {}) => getRadioChronCoreClient().chronicle.recent(options)
 });
+const ble = Object.freeze({
+  identify: (advertisement, timeoutMs) => getRadioChronCoreClient().ble.identify(advertisement, timeoutMs),
+  resetTracker: (policy = {}, timeoutMs) => getRadioChronCoreClient().ble.resetTracker(policy, timeoutMs),
+  observe: (observation, timeoutMs) => getRadioChronCoreClient().ble.observe(observation, timeoutMs),
+  histories: (timeoutMs) => getRadioChronCoreClient().ble.histories(timeoutMs),
+  evaluate: (nowMs, timeoutMs) => getRadioChronCoreClient().ble.evaluate(nowMs, timeoutMs)
+});
 
 module.exports = {
   RadioChronCoreClient,
   analyze: (options = {}) => getRadioChronCoreClient().analyze(options),
+  ble,
   chronicle,
   diagnoseConnectivity: (options = {}) => getRadioChronCoreClient().diagnoseConnectivity(options),
   disposeRadioChronCoreClient,

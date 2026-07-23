@@ -1,7 +1,7 @@
 {
   "name": "radiochron",
-  "version": "0.3.0",
-  "description": "Cross-platform Node.js API for the RadioChron Rust Wi-Fi diagnostics core.",
+  "version": "0.4.0",
+  "description": "Cross-platform Node.js API for RadioChron Wi-Fi diagnostics and portable BLE history/risk analysis.",
   "main": "core.js",
   "types": "core.d.ts",
   "exports": {
@@ -26,8 +26,8 @@
     "prepack": "node prepare.js"
   },
   "radiochronCore": {
-    "version": "0.3.0",
-    "gitSha": "c5c3b4c30b5395b2c8cbc459f4e85982e5fdbb4a",
+    "version": "0.4.0",
+    "gitSha": "fbd91670c4f15ce6d0e791d78da15189afb9f7e9",
     "repository": "https://github.com/sergii-ziborov/radiochron"
   },
   "license": "MIT",
@@ -38,6 +38,6 @@
     "url": "git+https://github.com/sergii-ziborov/radiochron-js.git"
   },
   "bugs": { "url": "https://github.com/sergii-ziborov/radiochron-js/issues" },
-  "keywords": ["wifi", "wlan", "diagnostics", "network", "iot", "nodejs", "windows", "linux", "linux-arm64", "raspberry-pi", "macos", "apple-silicon", "rust"],
+  "keywords": ["wifi", "bluetooth", "ble", "diagnostics", "iot", "nodejs", "windows", "linux", "linux-arm64", "raspberry-pi", "macos", "apple-silicon", "rust"],
   "engines": { "node": ">=18" }
 }

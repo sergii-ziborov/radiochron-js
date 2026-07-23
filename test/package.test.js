@@ -14,7 +14,7 @@ test('package metadata identifies the standalone Node library', () => {
 
 test('package metadata binds one exact direct core revision', () => {
   assert.match(packageJson.radiochronCore.gitSha, /^[0-9a-f]{40}$/);
-  assert.equal(packageJson.radiochronCore.version, '0.3.0');
+  assert.equal(packageJson.radiochronCore.version, '0.4.0');
 });
 
 test('all source-side package files exist', () => {
@@ -39,9 +39,9 @@ test('only the standalone Node library is MIT licensed', () => {
   assert.equal(packageJson.files.includes('LICENSE-APACHE'), false);
 });
 
-test('public declarations expose analysis, connectivity and chronicle APIs', () => {
+test('public declarations expose Wi-Fi, connectivity, chronicle and BLE APIs', () => {
   const declarations = require('node:fs').readFileSync(join(__dirname, '..', 'core.d.ts'), 'utf8');
-  for (const symbol of ['analyze(', 'sample(', 'diagnoseConnectivity(', 'RadioChronChronicleClient', 'RadioChronClockMetadata', 'clock: RadioChronClockMetadata']) {
+  for (const symbol of ['analyze(', 'sample(', 'diagnoseConnectivity(', 'RadioChronChronicleClient', 'RadioChronBleClient', 'RadioChronClockMetadata', 'clock: RadioChronClockMetadata']) {
     assert.match(declarations, new RegExp(symbol.replace('(', '\\(')));
   }
 });
