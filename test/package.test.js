@@ -1,7 +1,7 @@
 'use strict';
 
 const assert = require('node:assert/strict');
-const { existsSync } = require('node:fs');
+const { existsSync, readFileSync } = require('node:fs');
 const { join } = require('node:path');
 const test = require('node:test');
 const packageJson = require('../package.json');
@@ -31,6 +31,14 @@ test('package metadata covers Intel and Apple Silicon Macs plus Linux ARM64', ()
   assert(packageJson.files.includes('native/radiochron-node-bridge/src'));
   assert.equal(packageJson.files.includes('native'), false);
   assert.equal(packageJson.files.includes('vendor'), false);
+});
+
+test('native build provenance has one source of truth for the core revision', () => {
+  const source = readFileSync(join(__dirname, '..', 'scripts', 'build-core.js'), 'utf8');
+  assert.match(source, /packageJson\.radiochronCore\.gitSha/);
+  assert.match(source, /manifestSource\.match/);
+  assert.match(source, /stable-x86_64-pc-windows-msvc/);
+  assert.doesNotMatch(source, /c5c3b4c30b5395b2c8cbc459f4e85982e5fdbb4a/);
 });
 
 test('only the standalone Node library is MIT licensed', () => {
