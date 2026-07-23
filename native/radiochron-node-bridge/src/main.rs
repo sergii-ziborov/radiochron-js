@@ -109,7 +109,7 @@ fn handle(bridge: &Bridge, method: &str, params: &Value) -> anyhow::Result<Value
     match method {
         "ping" => Ok(json!({
             "engine": "radiochron",
-            "core_version": "0.2.0",
+            "core_version": "0.3.0",
             "transport": "node_adapter",
             "platform": std::env::consts::OS,
             "arch": std::env::consts::ARCH

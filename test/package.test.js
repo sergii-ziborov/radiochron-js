@@ -14,7 +14,7 @@ test('package metadata identifies the standalone Node library', () => {
 
 test('package metadata binds one exact direct core revision', () => {
   assert.match(packageJson.radiochronCore.gitSha, /^[0-9a-f]{40}$/);
-  assert.equal(packageJson.radiochronCore.version, '0.2.0');
+  assert.equal(packageJson.radiochronCore.version, '0.3.0');
 });
 
 test('all source-side package files exist', () => {

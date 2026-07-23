@@ -1,4 +1,5 @@
 /node_modules
+/artifacts/
 /radiochron.exe
 /vendor-core/
 /native/radiochron-desktop-bridge/target/

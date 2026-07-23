@@ -23,7 +23,7 @@ const sha256 = createHash('sha256').update(readFileSync(destination)).digest('he
 writeFileSync(`${destination}.build-info.json`, `${JSON.stringify({
   name: 'radiochron-node-bridge',
   version: '0.1.0',
-  core_git_sha: 'f9208c814646c75fca3d1aa1df3606da87b8671c',
+  core_git_sha: 'c5c3b4c30b5395b2c8cbc459f4e85982e5fdbb4a',
   platform: process.platform,
   arch: process.arch,
   sha256
