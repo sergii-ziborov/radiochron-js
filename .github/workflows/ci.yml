@@ -35,6 +35,9 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@stable
+      - name: Install Linux Bluetooth build dependencies
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install --yes libdbus-1-dev pkg-config
       - name: Build the pinned RadioChron Node adapter
         env:
           RADIOCHRON_CORE_OUTPUT_DIR: ${{ runner.temp }}/radiochron-native
