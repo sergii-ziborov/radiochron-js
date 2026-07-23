@@ -1,6 +1,6 @@
 {
   "name": "radiochron",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Cross-platform Node.js API for RadioChron Wi-Fi diagnostics and portable BLE history/risk analysis.",
   "main": "core.js",
   "types": "core.d.ts",

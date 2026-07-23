@@ -32,6 +32,7 @@ await radiochron.chronicle.stop();
 
 const identity = await radiochron.ble.identify(advertisement);
 const scan = await radiochron.ble.scan({ durationMs: 5_000 });
+console.log(scan.discovery_mode, scan.advertisements, scan.system_devices);
 await radiochron.ble.resetTracker({ persistent_unknown_ms: 60_000 });
 const result = await radiochron.ble.observe(timedObservation);
 const histories = await radiochron.ble.histories();
@@ -45,6 +46,20 @@ Bluetooth, Linux BlueZ or macOS CoreBluetooth and can also accept
 advertisements from another Node BLE transport. It provides protocol-aware
 identity, stateful history and caveated risk evidence. Scanning only starts
 when `ble.scan()` is called.
+
+`discovery_mode` reports how the platform performed that bounded scan. The
+Windows collector currently uses active discovery to request scan-response
+metadata, while macOS and Linux remain platform-managed. Active discovery runs
+only for the requested scan window; it can improve names and service metadata,
+but does not reveal connections between third-party devices.
+
+On Windows, `ble.scan()` also returns `system_devices`: privacy-minimized
+DeviceInformation records for OS-known Classic/BLE devices, including friendly
+name, address, transport, paired/connected state, and device category when
+Windows exposes it. This makes a connected mouse or headset visible even when
+it emits no advertisement during the scan. Linux and macOS currently return
+advertisement evidence without this desktop system-inventory enrichment.
+
 `call()` remains available as a low-level escape hatch.
 
 The adapter uses a private newline-delimited request protocol between Node and

@@ -1,6 +1,6 @@
 [package]
 name = "radiochron-node-bridge"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2021"
 rust-version = "1.85"
 publish = false
@@ -12,6 +12,9 @@ serde_json = "1"
 btleplug = "0.12.0"
 tokio = { version = "1.50", features = ["rt", "time"] }
 radiochron = { git = "https://github.com/sergii-ziborov/radiochron", rev = "fbd91670c4f15ce6d0e791d78da15189afb9f7e9", version = "0.4.0", default-features = false, features = ["status", "scan", "analyze", "sample", "record", "connectivity", "ble"] }
+
+[target.'cfg(windows)'.dependencies]
+windows = { version = "0.62.2", features = ["Devices_Bluetooth", "Devices_Enumeration"] }
 
 [profile.release]
 lto = "thin"

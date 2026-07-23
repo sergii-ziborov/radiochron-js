@@ -8,6 +8,8 @@ use btleplug::platform::Manager;
 use radiochron::ble::{AddressType, Advertisement, ManufacturerData, ServiceData};
 use serde_json::{json, Value};
 
+use crate::system_bluetooth;
+
 pub fn scan(params: &Value) -> anyhow::Result<Value> {
     let duration_ms = params
         .get("duration_ms")
@@ -33,9 +35,10 @@ async fn scan_async(duration: Duration) -> anyhow::Result<Value> {
         adapter.start_scan(ScanFilter::default()).await?;
     }
     tokio::time::sleep(duration).await;
+    let (system_devices, system_errors) = system_bluetooth::enumerate().await;
 
     let mut advertisements = Vec::new();
-    let mut errors = Vec::new();
+    let mut errors = system_errors;
     for (index, adapter) in adapters.iter().enumerate() {
         match adapter.peripherals().await {
             Ok(peripherals) => {
@@ -57,9 +60,19 @@ async fn scan_async(duration: Duration) -> anyhow::Result<Value> {
     Ok(json!({
         "adapter_count": adapters.len(),
         "elapsed_ms": started.elapsed().as_millis() as u64,
+        "discovery_mode": discovery_mode(),
         "advertisements": advertisements,
+        "system_devices": system_devices,
         "errors": errors
     }))
+}
+
+fn discovery_mode() -> &'static str {
+    if cfg!(windows) {
+        "active"
+    } else {
+        "platform_managed"
+    }
 }
 
 fn map(properties: PeripheralProperties) -> Advertisement {
@@ -121,5 +134,15 @@ mod tests {
             AddressType::NonResolvablePrivate
         );
         assert_eq!(classify_random(&[0b1100_0000]), AddressType::RandomStatic);
+    }
+
+    #[test]
+    fn reports_the_effective_platform_discovery_mode() {
+        let expected = if cfg!(windows) {
+            "active"
+        } else {
+            "platform_managed"
+        };
+        assert_eq!(discovery_mode(), expected);
     }
 }

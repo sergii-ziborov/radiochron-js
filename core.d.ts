@@ -319,10 +319,29 @@ export interface RadioChronBleScanOptions {
   timeoutMs?: number;
 }
 
+export type RadioChronBleDiscoveryMode = 'active' | 'passive' | 'platform_managed';
+
+export type RadioChronBluetoothTransport = 'ble' | 'classic' | 'dual' | 'unknown';
+
+export interface RadioChronBluetoothSystemDevice {
+  id: string;
+  name: string | null;
+  address: string | null;
+  transport: RadioChronBluetoothTransport;
+  paired: boolean | null;
+  connected: boolean | null;
+  category: string | null;
+  class_of_device: number | null;
+  appearance: number | null;
+  source: string;
+}
+
 export interface RadioChronBleScanResult {
   adapter_count: number;
   elapsed_ms: number;
+  discovery_mode: RadioChronBleDiscoveryMode;
   advertisements: RadioChronBleAdvertisement[];
+  system_devices?: RadioChronBluetoothSystemDevice[];
   errors: string[];
 }
 
