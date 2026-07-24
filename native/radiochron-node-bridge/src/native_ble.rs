@@ -44,7 +44,9 @@ async fn scan_async(duration: Duration) -> anyhow::Result<Value> {
             Ok(peripherals) => {
                 for peripheral in peripherals {
                     match peripheral.properties().await {
-                        Ok(Some(properties)) => advertisements.push(map(properties)),
+                        Ok(Some(properties)) => {
+                            advertisements.push(map(&peripheral, properties, &system_devices))
+                        }
                         Ok(None) => {}
                         Err(error) => errors.push(format!("adapter {index}: {error}")),
                     }
@@ -75,14 +77,24 @@ fn discovery_mode() -> &'static str {
     }
 }
 
-fn map(properties: PeripheralProperties) -> Advertisement {
+fn map(
+    peripheral: &btleplug::platform::Peripheral,
+    properties: PeripheralProperties,
+    system_devices: &[system_bluetooth::SystemBluetoothDevice],
+) -> Advertisement {
+    let address = format!("{:x}", properties.address);
     let address_type = match properties.address_type {
         Some(NativeAddressType::Public) => AddressType::Public,
         Some(NativeAddressType::Random) => classify_random(properties.address.as_ref()),
         None => AddressType::Unknown,
     };
     Advertisement {
-        address: format!("{:x}", properties.address),
+        protocol_identity: platform_identity(
+            &peripheral.id().to_string(),
+            &address,
+            system_devices,
+        ),
+        address,
         address_type,
         local_name: properties.local_name.or(properties.advertisement_name),
         rssi_dbm: properties.rssi.unwrap_or(i16::MIN),
@@ -106,8 +118,26 @@ fn map(properties: PeripheralProperties) -> Advertisement {
                 data,
             })
             .collect(),
-        protocol_identity: None,
     }
+}
+
+#[cfg(target_os = "macos")]
+fn platform_identity(
+    peripheral_id: &str,
+    _address: &str,
+    _system_devices: &[system_bluetooth::SystemBluetoothDevice],
+) -> Option<String> {
+    Some(format!("corebluetooth:{peripheral_id}"))
+}
+
+#[cfg(not(target_os = "macos"))]
+fn platform_identity(
+    _peripheral_id: &str,
+    address: &str,
+    system_devices: &[system_bluetooth::SystemBluetoothDevice],
+) -> Option<String> {
+    system_bluetooth::stable_identity_for_address(system_devices, address)
+        .map(|identity| format!("system:{identity}"))
 }
 
 fn classify_random(address: &[u8]) -> AddressType {
@@ -144,5 +174,14 @@ mod tests {
             "platform_managed"
         };
         assert_eq!(discovery_mode(), expected);
+    }
+
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn uses_the_core_bluetooth_peer_uuid_as_protocol_identity() {
+        assert_eq!(
+            platform_identity("A14A-PEER", "", &[]),
+            Some("corebluetooth:A14A-PEER".to_string())
+        );
     }
 }

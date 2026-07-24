@@ -53,6 +53,14 @@ metadata, while macOS and Linux remain platform-managed. Active discovery runs
 only for the requested scan window; it can improve names and service metadata,
 but does not reveal connections between third-party devices.
 
+CoreBluetooth assigns a peer UUID when macOS first encounters a peripheral, so
+the native adapter uses that OS identity across private-address rotation.
+Windows and Linux do not expose an equivalent identifier for arbitrary
+unpaired advertisers: paired Windows devices can be correlated through the
+system inventory, while anonymous private advertisements remain explicitly
+ephemeral. Service UUIDs are reported when the device advertises them; the
+scanner does not connect to unrelated devices to enumerate private GATT data.
+
 On Windows, `ble.scan()` also returns `system_devices`: privacy-minimized
 DeviceInformation records for OS-known Classic/BLE devices, including friendly
 name, address, transport, paired/connected state, and device category when

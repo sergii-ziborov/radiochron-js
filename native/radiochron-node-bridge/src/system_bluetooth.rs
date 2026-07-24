@@ -24,6 +24,31 @@ pub async fn enumerate() -> (Vec<SystemBluetoothDevice>, Vec<String>) {
     windows_inventory::enumerate().await
 }
 
+pub fn stable_identity_for_address(
+    devices: &[SystemBluetoothDevice],
+    address: &str,
+) -> Option<String> {
+    let normalized = normalized_address(address);
+    devices
+        .iter()
+        .find(|device| {
+            (device.paired == Some(true) || device.connected == Some(true))
+                && device
+                    .address
+                    .as_deref()
+                    .is_some_and(|candidate| normalized_address(candidate) == normalized)
+        })
+        .map(|device| device.id.clone())
+}
+
+fn normalized_address(value: &str) -> String {
+    value
+        .chars()
+        .filter(|character| character.is_ascii_hexdigit())
+        .flat_map(char::to_lowercase)
+        .collect()
+}
+
 #[cfg(windows)]
 mod windows_inventory {
     use std::collections::{HashMap, HashSet};
@@ -280,5 +305,47 @@ mod windows_inventory {
 
     fn is_connected(status: BluetoothConnectionStatus) -> bool {
         status == BluetoothConnectionStatus::Connected
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn exposes_only_known_system_identity_for_an_exact_address() {
+        let devices = vec![
+            device("paired", "AA:BB:CC:DD:EE:FF", Some(true), Some(false)),
+            device("unpaired", "11:22:33:44:55:66", Some(false), Some(false)),
+        ];
+
+        assert_eq!(
+            stable_identity_for_address(&devices, "aa-bb-cc-dd-ee-ff"),
+            Some("paired".to_string())
+        );
+        assert_eq!(
+            stable_identity_for_address(&devices, "11:22:33:44:55:66"),
+            None
+        );
+    }
+
+    fn device(
+        id: &str,
+        address: &str,
+        paired: Option<bool>,
+        connected: Option<bool>,
+    ) -> SystemBluetoothDevice {
+        SystemBluetoothDevice {
+            id: id.to_string(),
+            name: None,
+            address: Some(address.to_string()),
+            transport: "ble",
+            paired,
+            connected,
+            category: None,
+            class_of_device: None,
+            appearance: None,
+            source: "test",
+        }
     }
 }
