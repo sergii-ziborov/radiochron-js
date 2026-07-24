@@ -2,6 +2,12 @@ export interface RadioChronCoreClientOptions {
   executablePath?: string;
 }
 
+export interface RadioChronStreamOptions {
+  intervalMs?: number;
+  timeoutMs?: number;
+  signal?: AbortSignal;
+}
+
 export interface RadioChronPing {
   engine: 'radiochron';
   core_version: string;
@@ -319,6 +325,8 @@ export interface RadioChronBleScanOptions {
   timeoutMs?: number;
 }
 
+export interface RadioChronBleStreamOptions extends RadioChronBleScanOptions, RadioChronStreamOptions {}
+
 export type RadioChronBleDiscoveryMode = 'active' | 'passive' | 'platform_managed';
 
 export type RadioChronBluetoothTransport = 'ble' | 'classic' | 'dual' | 'unknown';
@@ -347,6 +355,7 @@ export interface RadioChronBleScanResult {
 
 export interface RadioChronBleClient {
   scan(options?: RadioChronBleScanOptions): Promise<RadioChronBleScanResult>;
+  stream(options?: RadioChronBleStreamOptions): AsyncIterable<RadioChronBleScanResult>;
   identify(advertisement: RadioChronBleAdvertisement, timeoutMs?: number): Promise<RadioChronBleIdentityResult>;
   resetTracker(policy?: RadioChronBleTrackerPolicy, timeoutMs?: number): Promise<{ reset: true }>;
   observe(observation: RadioChronBleObservation, timeoutMs?: number): Promise<RadioChronBleObservationResult>;
@@ -428,11 +437,17 @@ export interface RadioChronChronicleRecentOptions {
   timeoutMs?: number;
 }
 
+export interface RadioChronChronicleStreamOptions extends RadioChronStreamOptions {
+  maxEntries?: number;
+  includeExisting?: boolean;
+}
+
 export interface RadioChronChronicleClient {
   start(options?: RadioChronChronicleStartOptions): Promise<RadioChronChronicleStatus>;
   stop(): Promise<RadioChronChronicleStatus>;
   status(): Promise<RadioChronChronicleStatus>;
   recent(options?: RadioChronChronicleRecentOptions): Promise<RadioChronChronicleRecent>;
+  stream(options?: RadioChronChronicleStreamOptions): AsyncIterable<RadioChronChronicleEntry>;
 }
 
 export class RadioChronCoreClient {
@@ -450,6 +465,14 @@ export class RadioChronCoreClient {
   analyze(options?: RadioChronNetworkOptions): Promise<RadioChronAnalysisResult>;
   sample(options?: RadioChronSampleOptions): Promise<RadioChronSampleResult>;
   diagnoseConnectivity(options?: RadioChronConnectivityOptions): Promise<RadioChronConnectivityReport>;
+  stream<T = unknown>(
+    method: string,
+    params?: Record<string, unknown>,
+    options?: RadioChronStreamOptions
+  ): AsyncIterable<T>;
+  streamStatus(options?: RadioChronStreamOptions): AsyncIterable<RadioChronWifiStatus[]>;
+  streamBle(options?: RadioChronBleStreamOptions): AsyncIterable<RadioChronBleScanResult>;
+  streamChronicle(options?: RadioChronChronicleStreamOptions): AsyncIterable<RadioChronChronicleEntry>;
   chronicleStart(options?: RadioChronChronicleStartOptions): Promise<RadioChronChronicleStatus>;
   chronicleStop(): Promise<RadioChronChronicleStatus>;
   chronicleStatus(): Promise<RadioChronChronicleStatus>;
@@ -466,6 +489,9 @@ export function networks(options?: RadioChronNetworkOptions): Promise<RadioChron
 export function analyze(options?: RadioChronNetworkOptions): Promise<RadioChronAnalysisResult>;
 export function sample(options?: RadioChronSampleOptions): Promise<RadioChronSampleResult>;
 export function diagnoseConnectivity(options?: RadioChronConnectivityOptions): Promise<RadioChronConnectivityReport>;
+export function streamStatus(options?: RadioChronStreamOptions): AsyncIterable<RadioChronWifiStatus[]>;
+export function streamBle(options?: RadioChronBleStreamOptions): AsyncIterable<RadioChronBleScanResult>;
+export function streamChronicle(options?: RadioChronChronicleStreamOptions): AsyncIterable<RadioChronChronicleEntry>;
 export function getRadioChronCoreClient(): RadioChronCoreClient;
 export function disposeRadioChronCoreClient(): void;
 export function resolveRadioChronCoreBridgePath(options?: RadioChronCoreClientOptions): string;

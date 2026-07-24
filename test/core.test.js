@@ -88,3 +88,54 @@ test('typed API maps camelCase options onto the native bridge contract', async (
   });
   assert.deepEqual(calls[7].params, { now_ms: 1_000 });
 });
+
+test('status and BLE streams are cancellable async iterables', async () => {
+  const client = new RadioChronCoreClient({ executablePath: '/synthetic/core-bridge' });
+  let statusCalls = 0;
+  client.call = async (method) => {
+    if (method === 'wifi_status') return [{ sequence: ++statusCalls }];
+    if (method === 'ble_scan') return { advertisements: [{ sequence: 1 }] };
+    throw new Error(`unexpected method ${method}`);
+  };
+
+  const statuses = [];
+  for await (const snapshot of client.streamStatus({ intervalMs: 0 })) {
+    statuses.push(snapshot);
+    if (statuses.length === 2) break;
+  }
+  assert.deepEqual(statuses.map((snapshot) => snapshot[0].sequence), [1, 2]);
+
+  const scans = [];
+  for await (const snapshot of client.ble.stream({ durationMs: 25, intervalMs: 0 })) {
+    scans.push(snapshot);
+    break;
+  }
+  assert.equal(scans[0].advertisements.length, 1);
+});
+
+test('chronicle stream tails unseen event ids', async () => {
+  const client = new RadioChronCoreClient({ executablePath: '/synthetic/core-bridge' });
+  let reads = 0;
+  client.call = async (method) => {
+    assert.equal(method, 'chronicle_recent');
+    reads += 1;
+    return {
+      entries: reads === 1
+        ? [{ event_id: 'old' }]
+        : [{ event_id: 'old' }, { event_id: 'new' }]
+    };
+  };
+
+  const entries = [];
+  for await (const entry of client.chronicle.stream({ intervalMs: 0 })) {
+    entries.push(entry);
+    break;
+  }
+  assert.deepEqual(entries, [{ event_id: 'new' }]);
+});
+
+test('ESM entrypoint exposes named APIs', async () => {
+  const esm = await import('../core.mjs');
+  assert.equal(esm.RadioChronCoreClient, RadioChronCoreClient);
+  assert.equal(typeof esm.streamStatus, 'function');
+});

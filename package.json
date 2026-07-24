@@ -1,17 +1,20 @@
 {
   "name": "radiochron",
-  "version": "0.4.1",
-  "description": "Cross-platform Node.js API for RadioChron Wi-Fi diagnostics and portable BLE history/risk analysis.",
+  "version": "0.5.0",
+  "description": "Cross-platform Node.js API and streams for RadioChron Wi-Fi diagnostics and portable BLE history/risk analysis.",
   "main": "core.js",
+  "module": "core.mjs",
   "types": "core.d.ts",
   "exports": {
-    ".": { "types": "./core.d.ts", "require": "./core.js", "default": "./core.js" },
-    "./core": { "types": "./core.d.ts", "require": "./core.js", "default": "./core.js" },
+    ".": { "types": "./core.d.ts", "import": "./core.mjs", "require": "./core.js", "default": "./core.js" },
+    "./core": { "types": "./core.d.ts", "import": "./core.mjs", "require": "./core.js", "default": "./core.js" },
     "./package.json": "./package.json"
   },
   "files": [
     "core.js",
+    "core.mjs",
     "core.d.ts",
+    "streams.js",
     "native/radiochron-node-bridge/Cargo.lock",
     "native/radiochron-node-bridge/Cargo.toml",
     "native/radiochron-node-bridge/src",

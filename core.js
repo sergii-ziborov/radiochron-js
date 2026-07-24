@@ -3,6 +3,7 @@
 const { spawn } = require('node:child_process');
 const { existsSync } = require('node:fs');
 const { join, resolve } = require('node:path');
+const { chronicleStream, pollingStream } = require('./streams');
 
 const DEFAULT_TIMEOUT_MS = 20_000;
 
@@ -47,10 +48,12 @@ class RadioChronCoreClient {
       start: (chronicleOptions = {}) => this.chronicleStart(chronicleOptions),
       stop: () => this.chronicleStop(),
       status: () => this.chronicleStatus(),
-      recent: (chronicleOptions = {}) => this.chronicleRecent(chronicleOptions)
+      recent: (chronicleOptions = {}) => this.chronicleRecent(chronicleOptions),
+      stream: (streamOptions = {}) => this.streamChronicle(streamOptions)
     });
     this.ble = Object.freeze({
       scan: (scanOptions = {}) => this.bleScan(scanOptions),
+      stream: (streamOptions = {}) => this.streamBle(streamOptions),
       identify: (advertisement, timeoutMs) => this.bleIdentify(advertisement, timeoutMs),
       resetTracker: (policy = {}, timeoutMs) => this.bleResetTracker(policy, timeoutMs),
       observe: (observation, timeoutMs) => this.bleObserve(observation, timeoutMs),
@@ -126,6 +129,37 @@ class RadioChronCoreClient {
       quality_attempts: options.qualityAttempts,
       timeout_ms: options.probeTimeoutMs
     }), options.timeoutMs);
+  }
+
+  stream(method, params = {}, options = {}) {
+    return pollingStream(
+      () => this.call(method, params, options.timeoutMs),
+      options
+    );
+  }
+
+  streamStatus(options = {}) {
+    return this.stream('wifi_status', {}, options);
+  }
+
+  streamBle(options = {}) {
+    return pollingStream(
+      () => this.bleScan({
+        durationMs: options.durationMs,
+        timeoutMs: options.timeoutMs
+      }),
+      options
+    );
+  }
+
+  streamChronicle(options = {}) {
+    return chronicleStream(
+      () => this.chronicleRecent({
+        maxEntries: options.maxEntries,
+        timeoutMs: options.timeoutMs
+      }),
+      options
+    );
   }
 
   chronicleStart(options = {}) {
@@ -245,10 +279,12 @@ const chronicle = Object.freeze({
   start: (options = {}) => getRadioChronCoreClient().chronicle.start(options),
   stop: () => getRadioChronCoreClient().chronicle.stop(),
   status: () => getRadioChronCoreClient().chronicle.status(),
-  recent: (options = {}) => getRadioChronCoreClient().chronicle.recent(options)
+  recent: (options = {}) => getRadioChronCoreClient().chronicle.recent(options),
+  stream: (options = {}) => getRadioChronCoreClient().chronicle.stream(options)
 });
 const ble = Object.freeze({
   scan: (options = {}) => getRadioChronCoreClient().ble.scan(options),
+  stream: (options = {}) => getRadioChronCoreClient().ble.stream(options),
   identify: (advertisement, timeoutMs) => getRadioChronCoreClient().ble.identify(advertisement, timeoutMs),
   resetTracker: (policy = {}, timeoutMs) => getRadioChronCoreClient().ble.resetTracker(policy, timeoutMs),
   observe: (observation, timeoutMs) => getRadioChronCoreClient().ble.observe(observation, timeoutMs),
@@ -271,5 +307,8 @@ module.exports = {
   sample: (options = {}) => getRadioChronCoreClient().sample(options),
   scan: (timeoutMs) => getRadioChronCoreClient().scan(timeoutMs),
   status: () => getRadioChronCoreClient().status(),
+  streamBle: (options = {}) => getRadioChronCoreClient().streamBle(options),
+  streamChronicle: (options = {}) => getRadioChronCoreClient().streamChronicle(options),
+  streamStatus: (options = {}) => getRadioChronCoreClient().streamStatus(options),
   targetFor
 };

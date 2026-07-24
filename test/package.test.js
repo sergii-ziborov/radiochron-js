@@ -18,7 +18,7 @@ test('package metadata binds one exact direct core revision', () => {
 });
 
 test('all source-side package files exist', () => {
-  for (const name of ['core.js', 'core.d.ts', 'prepare.js', 'scripts/build-core.js', 'native/radiochron-node-bridge/Cargo.toml', 'README.md', 'LICENSE-MIT']) {
+  for (const name of ['core.js', 'core.mjs', 'streams.js', 'core.d.ts', 'prepare.js', 'scripts/build-core.js', 'native/radiochron-node-bridge/Cargo.toml', 'README.md', 'LICENSE-MIT']) {
     assert.equal(existsSync(join(__dirname, '..', name)), true, `${name} is missing`);
   }
 });
@@ -31,6 +31,14 @@ test('package metadata covers Intel and Apple Silicon Macs plus Linux ARM64', ()
   assert(packageJson.files.includes('native/radiochron-node-bridge/src'));
   assert.equal(packageJson.files.includes('native'), false);
   assert.equal(packageJson.files.includes('vendor'), false);
+});
+
+test('package metadata exposes both ESM and CommonJS', () => {
+  assert.equal(packageJson.module, 'core.mjs');
+  assert.equal(packageJson.exports['.'].import, './core.mjs');
+  assert.equal(packageJson.exports['.'].require, './core.js');
+  assert(packageJson.files.includes('core.mjs'));
+  assert(packageJson.files.includes('streams.js'));
 });
 
 test('native build provenance has one source of truth for the core revision', () => {
@@ -49,7 +57,7 @@ test('only the standalone Node library is MIT licensed', () => {
 
 test('public declarations expose Wi-Fi, connectivity, chronicle and BLE APIs', () => {
   const declarations = require('node:fs').readFileSync(join(__dirname, '..', 'core.d.ts'), 'utf8');
-  for (const symbol of ['analyze(', 'sample(', 'diagnoseConnectivity(', 'RadioChronChronicleClient', 'RadioChronBleClient', 'RadioChronBleDiscoveryMode', 'discovery_mode', 'RadioChronBluetoothSystemDevice', 'system_devices', 'RadioChronClockMetadata', 'clock: RadioChronClockMetadata']) {
+  for (const symbol of ['analyze(', 'sample(', 'diagnoseConnectivity(', 'streamStatus(', 'streamBle(', 'streamChronicle(', 'AsyncIterable', 'RadioChronChronicleClient', 'RadioChronBleClient', 'RadioChronBleDiscoveryMode', 'discovery_mode', 'RadioChronBluetoothSystemDevice', 'system_devices', 'RadioChronClockMetadata', 'clock: RadioChronClockMetadata']) {
     assert.match(declarations, new RegExp(symbol.replace('(', '\\(')));
   }
 });

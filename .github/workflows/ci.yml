@@ -64,6 +64,8 @@ jobs:
           path: ${{ runner.temp }}/radiochron-native
       - run: node --check prepare.js
       - run: node --check core.js
+      - run: node --check core.mjs
+      - run: node --check streams.js
       - run: node --check scripts/build-core.js
       - run: npm test
       - name: Verify npm package contents

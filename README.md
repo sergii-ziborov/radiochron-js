@@ -12,10 +12,22 @@ JavaScript applications never need to parse platform commands themselves.
 npm install radiochron
 ```
 
+Both module systems are first-class:
+
+```js
+// CommonJS
+const { getRadioChronCoreClient } = require('radiochron');
+```
+
+```js
+// ESM
+import { getRadioChronCoreClient, streamStatus } from 'radiochron';
+```
+
 ## Node API
 
 ```js
-const { getRadioChronCoreClient } = require('radiochron');
+import { getRadioChronCoreClient } from 'radiochron';
 
 const radiochron = getRadioChronCoreClient();
 const interfaces = await radiochron.status();
@@ -37,6 +49,47 @@ await radiochron.ble.resetTracker({ persistent_unknown_ms: 60_000 });
 const result = await radiochron.ble.observe(timedObservation);
 const histories = await radiochron.ble.histories();
 ```
+
+## Streaming
+
+The streaming API uses cancelable async iterables, so it works with
+`for await`, backpressure, and `AbortSignal` without buffering an unbounded
+history in JavaScript:
+
+```js
+import { ble, chronicle, streamStatus } from 'radiochron';
+
+const controller = new AbortController();
+
+for await (const interfaces of streamStatus({
+  intervalMs: 1_000,
+  signal: controller.signal
+})) {
+  console.log(interfaces);
+}
+
+for await (const scan of ble.stream({
+  durationMs: 4_000,
+  intervalMs: 10_000,
+  signal: controller.signal
+})) {
+  console.log(scan.advertisements);
+}
+
+for await (const entry of chronicle.stream({
+  intervalMs: 1_000,
+  includeExisting: false,
+  signal: controller.signal
+})) {
+  console.log(entry.event_id, entry.kind);
+}
+```
+
+`streamStatus()` yields current Wi-Fi snapshots. `ble.stream()` performs
+bounded native scans and preserves the same process-local BLE tracker between
+batches. `chronicle.stream()` tails unseen entries and deduplicates by
+`event_id`; set `includeExisting: true` to emit the initial retained window.
+Breaking the loop or aborting its signal stops further polling.
 
 `radiochron/core` remains an equivalent explicit export for applications that
 prefer it. The typed API covers status, scan, detailed BSS inventory, caveated
@@ -99,6 +152,10 @@ npm credential is stored in GitHub.
 - [`radiochron`](https://github.com/sergii-ziborov/radiochron) — Rust IoT core.
 - [`radiochron-js`](https://github.com/sergii-ziborov/radiochron-js) — this
   Node/npm library over the core.
+- [`radiochron-mcp`](https://github.com/sergii-ziborov/radiochron-mcp) — a
+  separate pure-Rust MCP server.
+- [`radiochron-agent`](https://github.com/sergii-ziborov/radiochron-agent) —
+  unattended durable IoT/fleet collector.
 - [`radiochron-electron`](https://github.com/sergii-ziborov/radiochron-electron)
   — a separate desktop application consuming `radiochron-js`.
 
