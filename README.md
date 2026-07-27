@@ -162,5 +162,23 @@ npm credential is stored in GitHub.
 Apple hosts use CoreWLAN, Linux uses nl80211, and Windows uses the native WLAN
 API through the Rust core.
 
+### Monitor mode is deliberately not exposed here
+
+The core's `monitor` feature — radiotap and 802.11 frame analysis, measured
+retry rate, deauthentication reason codes — is **not** surfaced by this library,
+and that is a decision rather than an omission.
+
+Capture requires elevated privilege (`CAP_NET_ADMIN` on Linux, root on macOS)
+and disturbs the live link: on macOS the station interface itself switches mode,
+so the machine loses its Wi-Fi connection for the duration of a capture. A Node
+library that a desktop application embeds is precisely the wrong place for that.
+
+Monitor mode is therefore available only where it can be operated responsibly:
+in [`radiochron`](https://github.com/sergii-ziborov/radiochron) itself, for a
+service that already runs privileged, and in
+[`radiochron-esp-idf`](https://github.com/sergii-ziborov/radiochron/tree/main/adapters/esp-idf)
+for firmware, which owns its radio outright. Nothing this library exposes needs
+those privileges.
+
 Licensed under the [MIT License](LICENSE-MIT). The underlying `radiochron`
 Rust core remains separately dual-licensed under MIT or Apache-2.0.
