@@ -1,6 +1,6 @@
 {
   "name": "radiochron",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Cross-platform Node.js API and streams for RadioChron Wi-Fi diagnostics and portable BLE history/risk analysis.",
   "main": "core.js",
   "module": "core.mjs",
@@ -29,8 +29,8 @@
     "prepack": "node prepare.js"
   },
   "radiochronCore": {
-    "version": "0.4.0",
-    "gitSha": "fbd91670c4f15ce6d0e791d78da15189afb9f7e9",
+    "version": "0.5.0",
+    "gitSha": "517ffe913eb0076687f72d1f4963e4ce2bf6173a",
     "repository": "https://github.com/sergii-ziborov/radiochron"
   },
   "license": "MIT",

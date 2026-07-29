@@ -9,10 +9,10 @@ use std::io::{self, BufRead, Write};
 use std::time::Duration;
 
 use anyhow::Context;
+use blazingly_json::{json, Value};
 use ble::BleService;
 use chronicle::ChronicleService;
 use serde::{Deserialize, Serialize};
-use serde_json::{json, Value};
 
 #[derive(Debug, Deserialize)]
 struct Request {
@@ -60,7 +60,7 @@ fn main() -> anyhow::Result<()> {
         if line.trim().is_empty() {
             continue;
         }
-        let response = match serde_json::from_str::<Request>(&line) {
+        let response = match blazingly_json::from_str::<Request>(&line) {
             Ok(request) => respond(&bridge, request),
             Err(error) => Response {
                 id: 0,
@@ -68,7 +68,7 @@ fn main() -> anyhow::Result<()> {
                 error: Some(format!("invalid request: {error}")),
             },
         };
-        serde_json::to_writer(&mut output, &response)?;
+        blazingly_json::to_writer(&mut output, &response)?;
         output.write_all(b"\n")?;
         output.flush()?;
     }
@@ -123,12 +123,12 @@ fn handle(bridge: &Bridge, method: &str, params: &Value) -> anyhow::Result<Value
     match method {
         "ping" => Ok(json!({
             "engine": "radiochron",
-            "core_version": "0.4.0",
+            "core_version": "0.5.0",
             "transport": "node_adapter",
             "platform": std::env::consts::OS,
             "arch": std::env::consts::ARCH
         })),
-        "wifi_status" => Ok(serde_json::to_value(radiochron::wlan::wifi_status()?)?),
+        "wifi_status" => Ok(blazingly_json::to_value(radiochron::wlan::wifi_status()?)?),
         "wifi_scan" => Ok(json!({
             "interfaces_scanning": radiochron::wlan::bss::request_scan()?
         })),
@@ -202,7 +202,7 @@ fn sample_connection(params: &Value) -> anyhow::Result<Value> {
     let duration = bounded_u64(params, "duration_seconds", 20, 1, 120)?;
     let interval = bounded_u64(params, "interval_ms", 1000, 250, 60_000)?;
     let interface = optional_string(params, "interface_guid")?;
-    Ok(serde_json::to_value(
+    Ok(blazingly_json::to_value(
         radiochron::wlan::sample::sample_connection_on(interface, duration, interval)?,
     )?)
 }
@@ -225,9 +225,9 @@ fn diagnose_connectivity(params: &Value) -> anyhow::Result<Value> {
         quality_attempts: bounded_u64(params, "quality_attempts", 4, 1, 20)? as u8,
         timeout: Duration::from_millis(bounded_u64(params, "timeout_ms", 3_000, 100, 30_000)?),
     };
-    Ok(serde_json::to_value(radiochron::connectivity::diagnose(
-        &config,
-    ))?)
+    Ok(blazingly_json::to_value(
+        radiochron::connectivity::diagnose(&config),
+    )?)
 }
 
 fn reject_unknown_arguments(params: &Value, allowed: &[&str]) -> anyhow::Result<()> {

@@ -5,7 +5,7 @@ fn ping_identifies_node_adapter_transport() {
     let result = handle(&Bridge::new(), "ping", &json!({})).unwrap();
     assert_eq!(result["engine"], "radiochron");
     assert_eq!(result["transport"], "node_adapter");
-    assert_eq!(result["core_version"], "0.4.0");
+    assert_eq!(result["core_version"], "0.5.0");
 }
 
 #[test]

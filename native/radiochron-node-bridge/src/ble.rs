@@ -1,7 +1,7 @@
 use std::sync::Mutex;
 
+use blazingly_json::{json, Value};
 use radiochron::ble::{Advertisement, Observation, Tracker, TrackerPolicy};
-use serde_json::{json, Value};
 
 pub struct BleService {
     tracker: Mutex<Tracker>,
@@ -24,7 +24,7 @@ impl BleService {
 
     pub fn reset(&self, params: &Value) -> anyhow::Result<Value> {
         let policy = match params.get("policy") {
-            Some(value) => serde_json::from_value(value.clone())?,
+            Some(value) => blazingly_json::from_value(value.clone())?,
             None => TrackerPolicy::default(),
         };
         *self.lock()? = Tracker::new(policy);
@@ -33,12 +33,12 @@ impl BleService {
 
     pub fn observe(&self, params: &Value) -> anyhow::Result<Value> {
         let observation: Observation = required(params, "observation")?;
-        Ok(serde_json::to_value(self.lock()?.observe(observation))?)
+        Ok(blazingly_json::to_value(self.lock()?.observe(observation))?)
     }
 
     pub fn histories(&self) -> anyhow::Result<Value> {
         let tracker = self.lock()?;
-        Ok(serde_json::to_value(
+        Ok(blazingly_json::to_value(
             tracker.histories().cloned().collect::<Vec<_>>(),
         )?)
     }
@@ -48,7 +48,7 @@ impl BleService {
             .get("now_ms")
             .and_then(Value::as_u64)
             .ok_or_else(|| anyhow::anyhow!("now_ms must be a non-negative integer"))?;
-        Ok(serde_json::to_value(self.lock()?.evaluate(now_ms))?)
+        Ok(blazingly_json::to_value(self.lock()?.evaluate(now_ms))?)
     }
 
     fn lock(&self) -> anyhow::Result<std::sync::MutexGuard<'_, Tracker>> {
@@ -62,7 +62,7 @@ fn required<T: serde::de::DeserializeOwned>(params: &Value, name: &str) -> anyho
     let value = params
         .get(name)
         .ok_or_else(|| anyhow::anyhow!("{name} is required"))?;
-    Ok(serde_json::from_value(value.clone())?)
+    Ok(blazingly_json::from_value(value.clone())?)
 }
 
 #[cfg(test)]

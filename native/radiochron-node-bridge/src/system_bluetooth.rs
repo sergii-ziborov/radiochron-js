@@ -15,13 +15,13 @@ pub struct SystemBluetoothDevice {
 }
 
 #[cfg(not(windows))]
-pub async fn enumerate() -> (Vec<SystemBluetoothDevice>, Vec<String>) {
+pub fn enumerate() -> (Vec<SystemBluetoothDevice>, Vec<String>) {
     (Vec::new(), Vec::new())
 }
 
 #[cfg(windows)]
-pub async fn enumerate() -> (Vec<SystemBluetoothDevice>, Vec<String>) {
-    windows_inventory::enumerate().await
+pub fn enumerate() -> (Vec<SystemBluetoothDevice>, Vec<String>) {
+    windows_inventory::enumerate()
 }
 
 pub fn stable_identity_for_address(
@@ -64,11 +64,11 @@ mod windows_inventory {
         classic_category, format_address, le_category, privacy_id,
     };
 
-    pub async fn enumerate() -> (Vec<SystemBluetoothDevice>, Vec<String>) {
+    pub fn enumerate() -> (Vec<SystemBluetoothDevice>, Vec<String>) {
         let mut devices = HashMap::new();
         let mut errors = Vec::new();
-        collect_classic(&mut devices, &mut errors).await;
-        collect_le(&mut devices, &mut errors).await;
+        collect_classic(&mut devices, &mut errors);
+        collect_le(&mut devices, &mut errors);
         let mut result: Vec<_> = devices.into_values().collect();
         result.sort_by(|left, right| {
             right
@@ -80,7 +80,7 @@ mod windows_inventory {
         (result, errors)
     }
 
-    async fn collect_classic(
+    fn collect_classic(
         devices: &mut HashMap<String, SystemBluetoothDevice>,
         errors: &mut Vec<String>,
     ) {
@@ -100,17 +100,14 @@ mod windows_inventory {
         for (selector, paired_hint) in selectors {
             match selector {
                 Ok(selector) => {
-                    collect_selector(&selector, "classic", paired_hint, devices, errors).await;
+                    collect_selector(&selector, "classic", paired_hint, devices, errors);
                 }
                 Err(error) => errors.push(format!("system classic selector: {error}")),
             }
         }
     }
 
-    async fn collect_le(
-        devices: &mut HashMap<String, SystemBluetoothDevice>,
-        errors: &mut Vec<String>,
-    ) {
+    fn collect_le(devices: &mut HashMap<String, SystemBluetoothDevice>, errors: &mut Vec<String>) {
         let selectors = [
             (BluetoothLEDevice::GetDeviceSelector(), None),
             (
@@ -127,14 +124,14 @@ mod windows_inventory {
         for (selector, paired_hint) in selectors {
             match selector {
                 Ok(selector) => {
-                    collect_selector(&selector, "ble", paired_hint, devices, errors).await;
+                    collect_selector(&selector, "ble", paired_hint, devices, errors);
                 }
                 Err(error) => errors.push(format!("system BLE selector: {error}")),
             }
         }
     }
 
-    async fn collect_selector(
+    fn collect_selector(
         selector: &HSTRING,
         transport: &'static str,
         paired_hint: Option<bool>,
@@ -142,7 +139,7 @@ mod windows_inventory {
         errors: &mut Vec<String>,
     ) {
         let collection = match DeviceInformation::FindAllAsyncAqsFilter(selector) {
-            Ok(operation) => match operation.await {
+            Ok(operation) => match operation.join() {
                 Ok(collection) => collection,
                 Err(error) => {
                     errors.push(format!("system {transport} inventory: {error}"));
@@ -167,26 +164,22 @@ mod windows_inventory {
                 continue;
             }
             let device = if transport == "classic" {
-                classic_device(&info, &raw_id, paired_hint).await
+                classic_device(&info, &raw_id, paired_hint)
             } else {
-                le_device(&info, &raw_id, paired_hint).await
+                le_device(&info, &raw_id, paired_hint)
             };
             merge(devices, device);
         }
     }
 
-    async fn classic_device(
+    fn classic_device(
         info: &DeviceInformation,
         raw_id: &str,
         paired_hint: Option<bool>,
     ) -> SystemBluetoothDevice {
         let native = BluetoothDevice::FromIdAsync(&HSTRING::from(raw_id))
             .ok()
-            .map(|operation| async move { operation.await.ok() });
-        let native = match native {
-            Some(operation) => operation.await,
-            None => None,
-        };
+            .and_then(|operation| operation.join().ok());
         let class_of_device = native
             .as_ref()
             .and_then(|device| device.ClassOfDevice().ok())
@@ -213,18 +206,14 @@ mod windows_inventory {
         }
     }
 
-    async fn le_device(
+    fn le_device(
         info: &DeviceInformation,
         raw_id: &str,
         paired_hint: Option<bool>,
     ) -> SystemBluetoothDevice {
         let native = BluetoothLEDevice::FromIdAsync(&HSTRING::from(raw_id))
             .ok()
-            .map(|operation| async move { operation.await.ok() });
-        let native = match native {
-            Some(operation) => operation.await,
-            None => None,
-        };
+            .and_then(|operation| operation.join().ok());
         let appearance = native
             .as_ref()
             .and_then(|device| device.Appearance().ok())
