@@ -144,12 +144,13 @@ identity and SHA-256 of every native target before it can enter the npm archive.
 CI builds Windows x64, Linux x64/ARM64, Intel Mac, and Apple Silicon variants and
 checks the JavaScript API on supported Node versions.
 
-An immutable version tag publishes through npm trusted publishing. The archive
-is assembled from the five artifacts of one green CI run, `prepack` verifies
-their identity/core revision/SHA-256, and `npm run verify:package` rejects Rust
-`target/` output, missing platform binaries, or an unexpectedly large archive.
-GitHub OIDC supplies a short-lived publishing identity; no npm credential is
-stored in GitHub.
+An immutable version tag publishes through the protected `NPM_TOKEN` GitHub
+Actions secret. The archive is assembled from the five artifacts of one green
+CI run, `prepack` verifies their identity/core revision/SHA-256, and
+`npm run verify:package` rejects Rust `target/` output, missing platform
+binaries, or an unexpectedly large archive. GitHub OIDC still supplies npm
+provenance, while the registry credential remains masked and available only to
+the tag-gated publish job.
 
 ## Repository boundaries
 
