@@ -38,6 +38,13 @@ jobs:
       - name: Install Linux Bluetooth build dependencies
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install --yes libdbus-1-dev pkg-config
+      - name: Enforce Tokio-free bridge boundary
+        working-directory: native/radiochron-node-bridge
+        run: >-
+          python -c "import json,subprocess;
+          names={p['name'] for p in json.loads(subprocess.check_output(['cargo','metadata','--locked','--format-version','1']))['packages']};
+          bad=sorted(names & {'tokio','btleplug','futures'});
+          assert not bad, f'forbidden runtime dependencies: {bad}'"
       - name: Build the pinned RadioChron Node adapter
         env:
           RADIOCHRON_CORE_OUTPUT_DIR: ${{ runner.temp }}/radiochron-native
@@ -78,3 +85,32 @@ jobs:
         run: npm pack --dry-run
       - name: Reject build artifacts and verify every native target
         run: npm run verify:package
+
+  publish:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [native-adapters, package]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+      - uses: actions/download-artifact@v7
+        with:
+          pattern: native-*
+          path: ${{ runner.temp }}/radiochron-native
+      - name: Publish verified package with trusted publishing
+        env:
+          RADIOCHRON_CORE_BINARY_WIN32_X64: ${{ runner.temp }}/radiochron-native/native-win32-x64/radiochron-node-bridge.exe
+          RADIOCHRON_CORE_BINARY_LINUX_X64: ${{ runner.temp }}/radiochron-native/native-linux-x64/radiochron-node-bridge
+          RADIOCHRON_CORE_BINARY_LINUX_ARM64: ${{ runner.temp }}/radiochron-native/native-linux-arm64/radiochron-node-bridge
+          RADIOCHRON_CORE_BINARY_DARWIN_X64: ${{ runner.temp }}/radiochron-native/native-darwin-x64/radiochron-node-bridge
+          RADIOCHRON_CORE_BINARY_DARWIN_ARM64: ${{ runner.temp }}/radiochron-native/native-darwin-arm64/radiochron-node-bridge
+        run: |
+          npm install --global npm@latest
+          npm run verify:package
+          npm publish --provenance --access public

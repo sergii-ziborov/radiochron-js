@@ -124,7 +124,11 @@ advertisement evidence without this desktop system-inventory enrichment.
 `call()` remains available as a low-level escape hatch.
 
 The adapter uses a private newline-delimited request protocol between Node and
-the linked Rust process. The
+the linked Rust process. Its hosted JSON codec is `blazingly-json`; the portable
+`radiochron` core retains its no-std-compatible codec boundary. Native BLE
+scanning uses `radiochron-native-ble` with direct WinRT, BlueZ D-Bus, and
+CoreBluetooth backends. The bridge no longer depends on `btleplug`, Tokio, or
+`futures`. The
 [`radiochron-electron`](https://github.com/sergii-ziborov/radiochron-electron)
 application imports this Node API and bundles its native adapter in installers.
 
@@ -140,12 +144,12 @@ identity and SHA-256 of every native target before it can enter the npm archive.
 CI builds Windows x64, Linux x64/ARM64, Intel Mac, and Apple Silicon variants and
 checks the JavaScript API on supported Node versions.
 
-Releases are published manually from an authenticated npm console. The archive
+An immutable version tag publishes through npm trusted publishing. The archive
 is assembled from the five artifacts of one green CI run, `prepack` verifies
 their identity/core revision/SHA-256, and `npm run verify:package` rejects Rust
 `target/` output, missing platform binaries, or an unexpectedly large archive.
-The version tag is pushed only after the public registry copy is verified; no
-npm credential is stored in GitHub.
+GitHub OIDC supplies a short-lived publishing identity; no npm credential is
+stored in GitHub.
 
 ## Repository boundaries
 
