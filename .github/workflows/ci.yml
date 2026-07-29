@@ -113,5 +113,6 @@ jobs:
           RADIOCHRON_CORE_BINARY_DARWIN_ARM64: ${{ runner.temp }}/radiochron-native/native-darwin-arm64/radiochron-node-bridge
         run: |
           npm install --global npm@latest
+          npm pack --dry-run
           npm run verify:package
           npm publish --provenance --access public
