@@ -8,8 +8,18 @@ const packageJson = require('../package.json');
 
 test('package metadata identifies the standalone Node library', () => {
   assert.equal(packageJson.name, 'radiochron');
-  assert.equal(packageJson.bin, undefined);
   assert.equal(packageJson.repository.url, 'git+https://github.com/sergii-ziborov/radiochron-js.git');
+});
+
+// The command line must not claim `radiochron`: the `radiochron-mcp` package
+// already installs a binary under that name, and two packages claiming one
+// command resolve by install order and break whichever was installed first.
+test('the command line installs under its own name and never shadows radiochron-mcp', () => {
+  assert.deepEqual(Object.keys(packageJson.bin), ['radiochron-js']);
+  assert.equal(packageJson.bin.radiochron, undefined);
+  assert.equal(packageJson.bin['radiochron-mcp'], undefined);
+  assert(packageJson.files.includes('cli.js'));
+  assert(packageJson.files.includes('cli-render.js'));
 });
 
 test('package metadata binds one exact direct core revision', () => {

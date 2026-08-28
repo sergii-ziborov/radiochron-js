@@ -24,6 +24,43 @@ const { getRadioChronCoreClient } = require('radiochron');
 import { getRadioChronCoreClient, streamStatus } from 'radiochron';
 ```
 
+## Command line
+
+The package installs a `radiochron-js` command over the same API:
+
+```sh
+npx radiochron-js status
+npx radiochron-js networks --refresh
+npx radiochron-js analyze
+npx radiochron-js connectivity --dns example.com --tcp example.com:443
+npx radiochron-js ble scan --duration 4000
+npx radiochron-js --help
+```
+
+`--json` prints the raw bridge result for any one-shot command, and unknown
+flags are refused rather than ignored:
+
+```sh
+npx radiochron-js networks --json | jq '.networks[] | select(.rssi_dbm > -60) | .ssid'
+```
+
+What this CLI has and the Rust one does not is **`watch`**, built on the
+streaming API above. Each item is one JSON line, so it composes with `jq`:
+
+```sh
+npx radiochron-js watch status --interval 2000
+npx radiochron-js watch chronicle --max 50
+npx radiochron-js watch ble --duration 4000
+```
+
+`chronicle record` likewise holds the recorder in the foreground and stops it
+cleanly on Ctrl-C — a one-shot `start` would end the moment the bridge exited.
+
+The command is deliberately **not** named `radiochron`: the
+[`radiochron-mcp`](https://github.com/sergii-ziborov/radiochron-mcp) package
+already installs a binary under that name, and two packages claiming one command
+resolve by install order. Install both without either shadowing the other.
+
 ## Node API
 
 ```js

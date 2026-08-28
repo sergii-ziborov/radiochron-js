@@ -10,11 +10,14 @@
     "./core": { "types": "./core.d.ts", "import": "./core.mjs", "require": "./core.js", "default": "./core.js" },
     "./package.json": "./package.json"
   },
+  "bin": { "radiochron-js": "./cli.js" },
   "files": [
     "core.js",
     "core.mjs",
     "core.d.ts",
     "streams.js",
+    "cli.js",
+    "cli-render.js",
     "native/radiochron-node-bridge/Cargo.lock",
     "native/radiochron-node-bridge/Cargo.toml",
     "native/radiochron-node-bridge/src",
