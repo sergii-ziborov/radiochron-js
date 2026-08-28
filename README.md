@@ -24,6 +24,37 @@ const { getRadioChronCoreClient } = require('radiochron');
 import { getRadioChronCoreClient, streamStatus } from 'radiochron';
 ```
 
+## Focused imports
+
+Three subpaths give each half of the API its own flat namespace:
+
+```js
+import { status, networks, analyze } from 'radiochron/wifi';
+import { scan, histories } from 'radiochron/ble';
+import { recent, stream } from 'radiochron/chronicle';
+```
+
+They are subpaths rather than separate packages on purpose. One native bridge
+ships with this package; splitting the surface across `radiochron-wifi` and
+`radiochron-bluetooth` would ship that binary twice, version the two halves
+apart, and make an application that wants both install both. Here the import
+site does the separating and there is still one package, one binary, one
+version.
+
+The separation earns its keep on names. `scan` means a Wi-Fi scan on one
+subpath and a BLE scan on the other, and `status` is an association state on
+one and the recorder's state on another — unambiguous at the point of import:
+
+```js
+import { status as wifiStatus } from 'radiochron/wifi';
+import { status as recorderStatus } from 'radiochron/chronicle';
+```
+
+Every subpath export is the identical function object the root exports, so the
+shared client and its single spawned bridge are shared too — importing from a
+subpath never starts a second process. CommonJS, ESM and TypeScript resolve all
+three; the root import keeps working unchanged.
+
 ## Command line
 
 The package installs a `radiochron-js` command over the same API:
