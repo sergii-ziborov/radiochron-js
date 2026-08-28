@@ -143,6 +143,96 @@ test('a rejected call becomes an exit code, not a stack trace', async () => {
   assert.equal(err, 'Error: bridge is missing');
 });
 
+/** An async iterable over fixed items, standing in for a live stream. */
+async function* emits(items) {
+  for (const item of items) yield item;
+}
+
+test('watch streams one JSON line per item and passes the interval through', async () => {
+  const client = fakeClient();
+  let options;
+  client.streamStatus = (given) => {
+    options = given;
+    return emits([{ tick: 1 }, { tick: 2 }]);
+  };
+
+  const { code, out, err } = await invoke(['watch', 'status', '--interval', '500'], client);
+  assert.equal(code, 0);
+  assert.deepEqual(out.split('\n').map((line) => JSON.parse(line)), [{ tick: 1 }, { tick: 2 }]);
+  assert.equal(options.intervalMs, 500);
+  assert.equal(typeof options.signal.aborted, 'boolean', 'the stream must be cancellable');
+  assert.match(err, /Ctrl-C to stop/);
+});
+
+test('watch defaults its interval and forwards its own flags', async () => {
+  const client = fakeClient();
+  let options;
+  client.streamChronicle = (given) => {
+    options = given;
+    return emits([]);
+  };
+
+  await invoke(['watch', 'chronicle', '--max', '50', '--existing'], client);
+  assert.equal(options.intervalMs, 2000, 'an unspecified interval must have a default');
+  assert.equal(options.maxEntries, 50);
+  assert.equal(options.includeExisting, true);
+});
+
+test('chronicle record starts, streams and always stops the recorder', async () => {
+  const client = fakeClient();
+  let started;
+  let stopped = false;
+  client.chronicle.start = (given) => {
+    started = given;
+    return Promise.resolve({ path: '/var/lib/radiochron/chronicle.jsonl' });
+  };
+  client.chronicle.stream = () => emits([{ event_id: 'a' }, { event_id: 'b' }]);
+  client.chronicle.stop = () => {
+    stopped = true;
+    return Promise.resolve({ running: false });
+  };
+
+  const { code, out, err } = await invoke(
+    ['chronicle', 'record', '--interval', '7', '--threshold', '12'],
+    client
+  );
+  assert.equal(code, 0);
+  assert.equal(started.intervalSeconds, 7);
+  assert.equal(started.signalThresholdDb, 12);
+  assert.match(err, /Recording to \/var\/lib\/radiochron\/chronicle\.jsonl/);
+  assert.deepEqual(out.split('\n').map((line) => JSON.parse(line)), [
+    { event_id: 'a' },
+    { event_id: 'b' }
+  ]);
+  assert.equal(stopped, true, 'the recorder must be stopped on the way out');
+});
+
+test('chronicle record stops the recorder even when the stream fails', async () => {
+  const client = fakeClient();
+  let stopped = false;
+  client.chronicle.start = () => Promise.resolve({ path: 'p' });
+  client.chronicle.stream = () => {
+    throw new Error('bridge died mid-stream');
+  };
+  client.chronicle.stop = () => {
+    stopped = true;
+    return Promise.resolve({});
+  };
+
+  const { code, err } = await invoke(['chronicle', 'record'], client);
+  assert.equal(code, 1);
+  assert.match(err, /bridge died mid-stream/);
+  assert.equal(stopped, true, 'a failed stream must not leave the recorder running');
+});
+
+test('streaming commands leave no signal handlers behind', async () => {
+  const before = process.listenerCount('SIGINT');
+  const client = fakeClient();
+  client.streamStatus = () => emits([{ tick: 1 }]);
+  await invoke(['watch', 'status'], client);
+  assert.equal(process.listenerCount('SIGINT'), before, 'SIGINT listeners must be released');
+});
+
 test('parseFlags accepts both spellings and rejects repeats', () => {
   const flags = parseFlags(['--max', '12', '--refresh'], ['max'], ['refresh']);
   assert.equal(flags.number('max'), 12);
