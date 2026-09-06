@@ -15,7 +15,9 @@ const core = require('./core');
 
 module.exports = {
   analyze: core.analyze,
+  diagnose: core.diagnose,
   diagnoseConnectivity: core.diagnoseConnectivity,
+  history: core.history,
   networks: core.networks,
   sample: core.sample,
   scan: core.scan,

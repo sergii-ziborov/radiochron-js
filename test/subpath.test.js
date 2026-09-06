@@ -8,7 +8,7 @@ const core = require('../core');
 const packageJson = require('../package.json');
 
 const SUBPATHS = {
-  wifi: ['analyze', 'diagnoseConnectivity', 'networks', 'sample', 'scan', 'status', 'streamStatus'],
+  wifi: ['analyze', 'diagnose', 'diagnoseConnectivity', 'history', 'networks', 'sample', 'scan', 'status', 'streamStatus'],
   ble: ['evaluate', 'histories', 'identify', 'observe', 'resetTracker', 'scan', 'stream'],
   chronicle: ['recent', 'start', 'status', 'stop', 'stream']
 };

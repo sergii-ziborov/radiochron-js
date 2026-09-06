@@ -426,6 +426,94 @@ export interface RadioChronConnectivityOptions {
   timeoutMs?: number;
 }
 
+export interface RadioChronHistoryOptions {
+  maxEvents?: number;
+  withinSeconds?: number | null;
+  timeoutMs?: number;
+}
+
+export interface RadioChronHistoryResult {
+  available: boolean;
+  reason?: string;
+  events?: Array<Record<string, unknown>>;
+  verdict?: {
+    events_considered: number;
+    window_seconds: number;
+    findings: RadioChronFinding[];
+  };
+}
+
+export type RadioChronIncidentAssessment = 'healthy' | 'degraded' | 'incident' | 'unknown';
+export type RadioChronConfidence = 'low' | 'medium' | 'high';
+export type RadioChronPrivacyLevel = 'full' | 'support' | 'minimal';
+
+export interface RadioChronIncidentCause {
+  kind: string;
+  confidence: RadioChronConfidence;
+  summary: string;
+  evidence_refs: Array<Record<string, unknown>>;
+}
+
+export interface RadioChronIncidentReport {
+  schema_version: number;
+  observed_at_epoch_seconds: number;
+  assessment: RadioChronIncidentAssessment;
+  causes: RadioChronIncidentCause[];
+  evidence: Array<Record<string, unknown>>;
+  gaps: Array<{ section: string; impact: string }>;
+  actions: Array<{ action: string; rationale: string }>;
+  limitations: string[];
+}
+
+export interface RadioChronDiagnoseOptions extends RadioChronConnectivityOptions {
+  refreshScan?: boolean;
+  includeHistory?: boolean;
+  includeAnalysis?: boolean;
+  maxEvents?: number;
+  withinSeconds?: number | null;
+}
+
+export interface RadioChronDiagnoseResult {
+  report: RadioChronIncidentReport;
+  evidence: Record<string, unknown>;
+}
+
+export interface RadioChronIncidentBundle {
+  schema: 'radiochron.incident_bundle.v1' | string;
+  bundle_id: string;
+  created_at: string;
+  producer: {
+    surface: string;
+    surface_version: string;
+    core_version: string;
+  };
+  platform: {
+    os: string;
+    arch: string;
+    os_version?: string;
+  };
+  privacy: {
+    level: RadioChronPrivacyLevel;
+    redacted_fields: string[];
+    disabled_collectors: string[];
+    retention_policy?: string | null;
+  };
+  incident: RadioChronIncidentReport;
+  [name: string]: unknown;
+}
+
+export interface RadioChronCreateIncidentBundleOptions extends RadioChronDiagnoseOptions {
+  path?: string;
+  privacy?: RadioChronPrivacyLevel;
+  report?: RadioChronIncidentReport;
+  evidence?: Record<string, unknown>;
+  diagnoseOptions?: RadioChronDiagnoseOptions;
+  bundleId?: string;
+  createdAt?: string;
+  producer?: RadioChronIncidentBundle['producer'];
+  platform?: RadioChronIncidentBundle['platform'];
+}
+
 export interface RadioChronChronicleStartOptions {
   intervalSeconds?: number;
   signalThresholdDb?: number;
@@ -465,6 +553,8 @@ export class RadioChronCoreClient {
   analyze(options?: RadioChronNetworkOptions): Promise<RadioChronAnalysisResult>;
   sample(options?: RadioChronSampleOptions): Promise<RadioChronSampleResult>;
   diagnoseConnectivity(options?: RadioChronConnectivityOptions): Promise<RadioChronConnectivityReport>;
+  history(options?: RadioChronHistoryOptions): Promise<RadioChronHistoryResult>;
+  diagnose(options?: RadioChronDiagnoseOptions): Promise<RadioChronDiagnoseResult>;
   stream<T = unknown>(
     method: string,
     params?: Record<string, unknown>,
@@ -489,6 +579,10 @@ export function networks(options?: RadioChronNetworkOptions): Promise<RadioChron
 export function analyze(options?: RadioChronNetworkOptions): Promise<RadioChronAnalysisResult>;
 export function sample(options?: RadioChronSampleOptions): Promise<RadioChronSampleResult>;
 export function diagnoseConnectivity(options?: RadioChronConnectivityOptions): Promise<RadioChronConnectivityReport>;
+export function history(options?: RadioChronHistoryOptions): Promise<RadioChronHistoryResult>;
+export function diagnose(options?: RadioChronDiagnoseOptions): Promise<RadioChronDiagnoseResult>;
+export function createIncidentBundle(options?: RadioChronCreateIncidentBundleOptions): Promise<RadioChronIncidentBundle>;
+export function readIncidentBundle(pathOrJson: string): Promise<RadioChronIncidentBundle>;
 export function streamStatus(options?: RadioChronStreamOptions): AsyncIterable<RadioChronWifiStatus[]>;
 export function streamBle(options?: RadioChronBleStreamOptions): AsyncIterable<RadioChronBleScanResult>;
 export function streamChronicle(options?: RadioChronChronicleStreamOptions): AsyncIterable<RadioChronChronicleEntry>;

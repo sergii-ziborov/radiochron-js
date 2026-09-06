@@ -1,9 +1,12 @@
 'use strict';
 
+const { randomUUID } = require('node:crypto');
 const { spawn } = require('node:child_process');
 const { existsSync } = require('node:fs');
+const { readFile, writeFile } = require('node:fs/promises');
 const { join, resolve } = require('node:path');
 const { chronicleStream, pollingStream } = require('./streams');
+const { INCIDENT_BUNDLE_SCHEMA, buildIncidentBundle, redactBundle } = require('./incident-bundle');
 
 const DEFAULT_TIMEOUT_MS = 20_000;
 
@@ -128,6 +131,32 @@ class RadioChronCoreClient {
       quality_target: options.qualityTarget,
       quality_attempts: options.qualityAttempts,
       timeout_ms: options.probeTimeoutMs
+    }), options.timeoutMs);
+  }
+
+  history(options = {}) {
+    return this.call('wifi_history', compact({
+      max_events: options.maxEvents,
+      within_seconds: options.withinSeconds
+    }), options.timeoutMs);
+  }
+
+  diagnose(options = {}) {
+    return this.call('diagnose_incident', compact({
+      dns_name: options.dnsName,
+      tcp_target: options.tcpTarget,
+      internet_target: options.internetTarget,
+      captive_portal_url: options.captivePortalUrl,
+      captive_portal_expected_status: options.captivePortalExpectedStatus,
+      tls_target: options.tlsTarget,
+      quality_target: options.qualityTarget,
+      quality_attempts: options.qualityAttempts,
+      timeout_ms: options.probeTimeoutMs,
+      refresh_scan: options.refreshScan,
+      include_history: options.includeHistory,
+      include_analysis: options.includeAnalysis,
+      max_events: options.maxEvents,
+      within_seconds: options.withinSeconds
     }), options.timeoutMs);
   }
 
@@ -297,12 +326,16 @@ module.exports = {
   analyze: (options = {}) => getRadioChronCoreClient().analyze(options),
   ble,
   chronicle,
+  createIncidentBundle,
+  diagnose: (options = {}) => getRadioChronCoreClient().diagnose(options),
   diagnoseConnectivity: (options = {}) => getRadioChronCoreClient().diagnoseConnectivity(options),
   disposeRadioChronCoreClient,
   getRadioChronCoreClient,
+  history: (options = {}) => getRadioChronCoreClient().history(options),
   networks: (options = {}) => getRadioChronCoreClient().networks(options),
   ping: () => getRadioChronCoreClient().ping(),
   radiochronCoreManifestPath,
+  readIncidentBundle,
   resolveRadioChronCoreBridgePath,
   sample: (options = {}) => getRadioChronCoreClient().sample(options),
   scan: (timeoutMs) => getRadioChronCoreClient().scan(timeoutMs),
@@ -312,3 +345,47 @@ module.exports = {
   streamStatus: (options = {}) => getRadioChronCoreClient().streamStatus(options),
   targetFor
 };
+
+async function createIncidentBundle(options = {}) {
+  const diagnoseOptions = options.diagnoseOptions || options;
+  const diagnosis = options.report
+    ? { report: options.report, evidence: options.evidence || {} }
+    : await getRadioChronCoreClient().diagnose(diagnoseOptions);
+  const privacy = options.privacy || 'support';
+  const bundle = redactBundle(
+    buildIncidentBundle({
+      diagnosis,
+      privacy,
+      bundleId: options.bundleId || randomUUID(),
+      createdAt: options.createdAt || new Date().toISOString(),
+      producer: options.producer || {
+        surface: 'node',
+        surface_version: require('./package.json').version,
+        core_version: require('./package.json').radiochronCore?.version || '0.5.0'
+      },
+      platform: options.platform || {
+        os: process.platform,
+        arch: process.arch
+      }
+    }),
+    privacy
+  );
+  if (options.path) {
+    await writeFile(options.path, `${JSON.stringify(bundle, null, 2)}\n`, 'utf8');
+  }
+  return bundle;
+}
+
+async function readIncidentBundle(pathOrJson) {
+  const raw = typeof pathOrJson === 'string' && pathOrJson.trim().startsWith('{')
+    ? pathOrJson
+    : await readFile(pathOrJson, 'utf8');
+  const bundle = JSON.parse(raw);
+  if (bundle.schema !== INCIDENT_BUNDLE_SCHEMA) {
+    throw new Error(`unsupported incident bundle schema: ${bundle.schema}`);
+  }
+  if (!bundle.bundle_id || !bundle.created_at || !bundle.incident) {
+    throw new Error('incident bundle is missing required fields');
+  }
+  return bundle;
+}

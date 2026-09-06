@@ -1,7 +1,7 @@
 {
   "name": "radiochron",
-  "version": "0.6.1",
-  "description": "Cross-platform Node.js API and streams for RadioChron Wi-Fi diagnostics and portable BLE history/risk analysis.",
+  "version": "0.7.0",
+  "description": "Cross-platform Node.js API and streams for RadioChron Wi-Fi flight recording, incident diagnosis, and portable BLE history/risk analysis.",
   "main": "core.js",
   "module": "core.mjs",
   "types": "core.d.ts",
@@ -30,6 +30,7 @@
     "chronicle.d.ts",
     "cli.js",
     "cli-render.js",
+    "incident-bundle.js",
     "native/radiochron-node-bridge/Cargo.lock",
     "native/radiochron-node-bridge/Cargo.toml",
     "native/radiochron-node-bridge/src",
@@ -44,8 +45,8 @@
     "prepack": "node prepare.js"
   },
   "radiochronCore": {
-    "version": "0.5.0",
-    "gitSha": "517ffe913eb0076687f72d1f4963e4ce2bf6173a",
+    "version": "0.6.0",
+    "gitSha": "83865e2fa29267879eb885b84f7ec0a284539ad0",
     "repository": "https://github.com/sergii-ziborov/radiochron"
   },
   "license": "MIT",

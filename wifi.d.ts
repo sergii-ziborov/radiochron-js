@@ -5,7 +5,9 @@
 
 export {
   analyze,
+  diagnose,
   diagnoseConnectivity,
+  history,
   networks,
   sample,
   scan,
@@ -20,7 +22,11 @@ export type {
   RadioChronConnectivityOptions,
   RadioChronConnectivityReport,
   RadioChronDiagnosticStage,
+  RadioChronDiagnoseOptions,
+  RadioChronDiagnoseResult,
   RadioChronFinding,
+  RadioChronHistoryOptions,
+  RadioChronHistoryResult,
   RadioChronInformationElements,
   RadioChronInterface,
   RadioChronInterfaceError,

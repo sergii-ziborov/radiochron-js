@@ -1,5 +1,6 @@
 mod ble;
 mod chronicle;
+mod incident;
 mod native_ble;
 mod system_bluetooth;
 #[cfg(windows)]
@@ -96,6 +97,7 @@ fn handle(bridge: &Bridge, method: &str, params: &Value) -> anyhow::Result<Value
     let allowed: &[&str] = match method {
         "ping" | "wifi_status" | "wifi_scan" | "chronicle_stop" | "chronicle_status"
         | "ble_histories" => &[],
+        "wifi_history" => &["max_events", "within_seconds"],
         "wifi_networks" | "wifi_analyze" => &["refresh_scan"],
         "wifi_sample" => &["interface_guid", "duration_seconds", "interval_ms"],
         "connectivity_diagnose" => &[
@@ -108,6 +110,22 @@ fn handle(bridge: &Bridge, method: &str, params: &Value) -> anyhow::Result<Value
             "quality_target",
             "quality_attempts",
             "timeout_ms",
+        ],
+        "diagnose_incident" => &[
+            "dns_name",
+            "tcp_target",
+            "internet_target",
+            "captive_portal_url",
+            "captive_portal_expected_status",
+            "tls_target",
+            "quality_target",
+            "quality_attempts",
+            "timeout_ms",
+            "refresh_scan",
+            "include_history",
+            "include_analysis",
+            "max_events",
+            "within_seconds",
         ],
         "chronicle_start" => &["interval_seconds", "signal_threshold_db"],
         "chronicle_recent" => &["max_entries"],
@@ -135,7 +153,9 @@ fn handle(bridge: &Bridge, method: &str, params: &Value) -> anyhow::Result<Value
         "wifi_networks" => collect_networks(params),
         "wifi_analyze" => analyze_environment(params),
         "wifi_sample" => sample_connection(params),
+        "wifi_history" => incident::wifi_history(params),
         "connectivity_diagnose" => diagnose_connectivity(params),
+        "diagnose_incident" => incident::diagnose_incident(params),
         "ble_identify" => bridge.ble.identify(params),
         "ble_scan" => native_ble::scan(params),
         "ble_tracker_reset" => bridge.ble.reset(params),

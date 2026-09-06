@@ -105,6 +105,9 @@ const connectivity = await radiochron.diagnoseConnectivity({
   dnsName: 'broker.lan',
   tcpTarget: 'broker.lan:1883'
 });
+const wifiHistory = await radiochron.history({ maxEvents: 50 });
+const incident = await radiochron.diagnose({ includeBle: false });
+// Portable `.rchron` transfer: createIncidentBundle / readIncidentBundle
 
 await radiochron.chronicle.start({ intervalSeconds: 5 });
 const recentChanges = await radiochron.chronicle.recent({ maxEntries: 100 });

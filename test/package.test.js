@@ -67,7 +67,7 @@ test('only the standalone Node library is MIT licensed', () => {
 
 test('public declarations expose Wi-Fi, connectivity, chronicle and BLE APIs', () => {
   const declarations = require('node:fs').readFileSync(join(__dirname, '..', 'core.d.ts'), 'utf8');
-  for (const symbol of ['analyze(', 'sample(', 'diagnoseConnectivity(', 'streamStatus(', 'streamBle(', 'streamChronicle(', 'AsyncIterable', 'RadioChronChronicleClient', 'RadioChronBleClient', 'RadioChronBleDiscoveryMode', 'discovery_mode', 'RadioChronBluetoothSystemDevice', 'system_devices', 'RadioChronClockMetadata', 'clock: RadioChronClockMetadata']) {
+  for (const symbol of ['analyze(', 'sample(', 'diagnoseConnectivity(', 'history(', 'diagnose(', 'createIncidentBundle(', 'readIncidentBundle(', 'streamStatus(', 'streamBle(', 'streamChronicle(', 'AsyncIterable', 'RadioChronChronicleClient', 'RadioChronBleClient', 'RadioChronBleDiscoveryMode', 'discovery_mode', 'RadioChronBluetoothSystemDevice', 'system_devices', 'RadioChronClockMetadata', 'clock: RadioChronClockMetadata']) {
     assert.match(declarations, new RegExp(symbol.replace('(', '\\(')));
   }
 });

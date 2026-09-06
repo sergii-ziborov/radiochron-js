@@ -25,6 +25,8 @@ WI-FI
   analyze [--refresh]             findings about the environment
   sample [--duration S] [--interval MS] [--interface GUID]
                                   track signal over a window
+  history [--max N] [--within S]  Windows WLAN history (capability-safe)
+  diagnose [connectivity flags]   shared incident classification
 
 CONNECTIVITY
   connectivity [--dns NAME] [--tcp HOST:PORT] [--internet URL]
@@ -66,6 +68,11 @@ const SPEC = {
   networks: [[], ['refresh']],
   analyze: [[], ['refresh']],
   sample: [['duration', 'interval', 'interface'], []],
+  history: [['max', 'within'], []],
+  diagnose: [
+    ['dns', 'tcp', 'internet', 'captive-portal', 'captive-status', 'tls', 'quality', 'attempts', 'probe-timeout', 'max', 'within'],
+    ['refresh', 'no-history', 'no-analysis']
+  ],
   connectivity: [
     ['dns', 'tcp', 'internet', 'captive-portal', 'captive-status', 'tls', 'quality', 'attempts', 'probe-timeout'],
     []
@@ -171,6 +178,20 @@ const ONE_SHOT = {
       durationSeconds: flags.number('duration'),
       intervalMs: flags.number('interval'),
       interfaceGuid: flags.text('interface')
+    }),
+  history: (flags, client) =>
+    client.history({
+      maxEvents: flags.number('max'),
+      withinSeconds: flags.number('within')
+    }),
+  diagnose: (flags, client) =>
+    client.diagnose({
+      ...connectivityOptions(flags),
+      refreshScan: flags.on('refresh'),
+      includeHistory: !flags.on('no-history'),
+      includeAnalysis: !flags.on('no-analysis'),
+      maxEvents: flags.number('max'),
+      withinSeconds: flags.number('within')
     }),
   connectivity: (flags, client) => client.diagnoseConnectivity(connectivityOptions(flags)),
   'ble scan': (flags, client) => client.ble.scan({ durationMs: flags.number('duration') }),
