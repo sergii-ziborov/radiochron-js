@@ -46,7 +46,7 @@
   },
   "radiochronCore": {
     "version": "0.6.0",
-    "gitSha": "83865e2fa29267879eb885b84f7ec0a284539ad0",
+    "gitSha": "0678b73044cbf83446d17a76912dc004af40f08e",
     "repository": "https://github.com/sergii-ziborov/radiochron"
   },
   "license": "MIT",
