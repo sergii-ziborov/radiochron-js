@@ -105,14 +105,19 @@ jobs:
           path: ${{ runner.temp }}/radiochron-native
       - name: Publish verified package
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           RADIOCHRON_CORE_BINARY_WIN32_X64: ${{ runner.temp }}/radiochron-native/native-win32-x64/radiochron-node-bridge.exe
           RADIOCHRON_CORE_BINARY_LINUX_X64: ${{ runner.temp }}/radiochron-native/native-linux-x64/radiochron-node-bridge
           RADIOCHRON_CORE_BINARY_LINUX_ARM64: ${{ runner.temp }}/radiochron-native/native-linux-arm64/radiochron-node-bridge
           RADIOCHRON_CORE_BINARY_DARWIN_X64: ${{ runner.temp }}/radiochron-native/native-darwin-x64/radiochron-node-bridge
           RADIOCHRON_CORE_BINARY_DARWIN_ARM64: ${{ runner.temp }}/radiochron-native/native-darwin-arm64/radiochron-node-bridge
         run: |
+          # Trusted publishing via OIDC (no NPM_TOKEN). Requires a Trusted Publisher
+          # on npm for this repo + workflow filename ci.yml, and npm CLI >= 11.5.1.
           npm install --global npm@latest
+          npm --version
           npm pack --dry-run
           npm run verify:package
-          npm publish --provenance --access public
+          # Drop setup-node's empty _authToken so npm uses OIDC instead of a dead secret.
+          sed -i '/_authToken/d' "$NPM_CONFIG_USERCONFIG"
+          unset NODE_AUTH_TOKEN
+          npm publish --access public
