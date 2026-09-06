@@ -203,6 +203,54 @@ CoreBluetooth backends. The bridge no longer depends on `btleplug`, Tokio, or
 [`radiochron-electron`](https://github.com/sergii-ziborov/radiochron-electron)
 application imports this Node API and bundles its native adapter in installers.
 
+## MCP integration (when to use which)
+
+[`radiochron-mcp`](https://github.com/sergii-ziborov/radiochron-mcp) is a
+**separate** pure-Rust MCP server and CLI. This npm package does **not** embed
+MCP, and RadioChron Desktop does **not** call MCP for diagnosis.
+
+Both surfaces use the same core `incident::classify` rules:
+
+1. **Use MCP** when an assistant (Claude Desktop, Cursor MCP, etc.) or a human
+   CLI needs tools over stdio: `diagnose_incident`, `wifi_history`,
+   `ble_scan`, … — or `radiochron doctor`.
+2. **Use this Node package** when your process already runs JavaScript and
+   should keep radio evidence in-process: services, Electron, test harnesses.
+
+```js
+import { getRadioChronCoreClient, createIncidentBundle } from 'radiochron';
+
+const rc = getRadioChronCoreClient();
+
+// Same conceptual payload as MCP diagnose_incident → incident field
+const report = await rc.diagnose({
+  includeBle: false,
+  dnsName: 'broker.lan',
+  tcpTarget: 'broker.lan:1883'
+});
+
+const history = await rc.history({ maxEvents: 100 });
+// Prefer numeric event IDs / ConnectionId continuity — not localized strings
+
+if (report.assessment === 'incident') {
+  const rchron = createIncidentBundle({
+    report,
+    producer: {
+      surface: 'node',
+      surface_version: '0.7.0',
+      core_version: '0.6.0'
+    }
+  });
+  // hand the .rchron bytes to support — MCP can produce the same schema
+}
+```
+
+Register the sibling MCP server for assistants without changing app code:
+
+```sh
+claude mcp add radiochron -- npx -y radiochron-mcp
+```
+
 ## Build and provenance
 
 ```sh
