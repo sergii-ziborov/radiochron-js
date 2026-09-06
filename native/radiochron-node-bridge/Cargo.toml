@@ -10,7 +10,7 @@ anyhow = "1"
 serde = { version = "1", features = ["derive"] }
 blazingly-json = "0.1.0"
 radiochron = { version = "=0.6.0", default-features = false, features = ["status", "scan", "analyze", "sample", "history", "record", "connectivity", "ble", "incident"] }
-radiochron-native-ble = { git = "https://github.com/sergii-ziborov/radiochron-native-ble", rev = "8e5baba" }
+radiochron-native-ble = "0.1.1"
 
 [target.'cfg(windows)'.dependencies]
 windows = { version = "0.62.2", features = ["Devices_Bluetooth", "Devices_Enumeration"] }
